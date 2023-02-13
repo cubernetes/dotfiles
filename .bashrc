@@ -87,3 +87,5 @@ if [ -f ~/.userbashrc ]; then
 fi
 
 TERM=xterm
+
+eval $(thefuck --alias)
