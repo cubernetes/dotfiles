@@ -47,6 +47,7 @@ alias rm='trash'
 alias open='xdg-open'
 alias xcopy='xsel --clipboard --input'
 alias xpaste='xsel --clipboard --output'
+alias sl='sl -GwFdcal'
 
 alias dotconf='$(type -P git) --git-dir="${HOME}/dotfiles/" --work-tree="${HOME}"'
 dotconf config status.showUntrackedFiles no
