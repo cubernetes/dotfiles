@@ -44,6 +44,9 @@ alias paruuu='yes | sudo pacman -Sy archlinux-keyring && yes | sudo pacman -Syyu
 alias shortprompt="unset PROMPT_COMMAND && PS1='$'"
 alias longprompt="PROMPT_COMMAND=prompt_command_hook"
 alias rm='trash'
+alias open='xdg-open'
+alias xcopy='xsel --clipboard --input'
+alias xpaste='xsel --clipboard --output'
 
 alias dotconf='$(type -P git) --git-dir="${HOME}/dotfiles/" --work-tree="${HOME}"'
 dotconf config status.showUntrackedFiles no
