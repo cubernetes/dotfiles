@@ -43,6 +43,8 @@ alias aptclean='sudo apt update && sudo apt upgrade && sudo apt autoremove && su
 alias paruuu='yes | sudo pacman -Sy archlinux-keyring && yes | sudo pacman -Syyuu && yes | paru'
 alias shortprompt="unset PROMPT_COMMAND && PS1='$'"
 alias longprompt="PROMPT_COMMAND=prompt_command_hook"
+alias rm='trash'
+
 alias dotconf='$(type -P git) --git-dir="${HOME}/dotfiles/" --work-tree="${HOME}"'
 dotconf config status.showUntrackedFiles no
 
