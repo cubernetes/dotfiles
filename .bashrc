@@ -88,6 +88,7 @@ fi
 
 TERM=xterm
 
-eval $(thefuck --alias)
+eval "$(thefuck --alias)"
+eval "$(zoxide init bash)"
 
 alias rm='trash'
