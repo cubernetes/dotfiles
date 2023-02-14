@@ -87,8 +87,3 @@ if [ -f ~/.userbashrc ]; then
 fi
 
 TERM=xterm
-
-eval "$(thefuck --alias)"
-eval "$(zoxide init bash)"
-
-alias rm='trash'
