@@ -61,7 +61,10 @@ function skill () {
 }
 
 function bat () {
-	2>/dev/null batcat "${@}" || $(type -P bat) "${@}"
+	2>/dev/null batcat "${@}" || \
+		1>/dev/null type -P bat && \
+		$(type -P bat) "${@}" || \
+		{ echo "bat not installed"; return 1; }
 }
 
 function norminette () {
@@ -137,6 +140,7 @@ alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
 alias l='ls --color=auto -FhalrtZ1'
+alias ls='ls --color=auto'
 alias ll='ls --color=auto -FhalrtZ1'
 alias grep='grep --color=auto'
 alias francinette='"${HOME}"/francinette/tester.sh'
@@ -157,7 +161,7 @@ alias norm2='alacritty -e sh -c '\''watch -cn.5 \
             norminette -R CheckForbiddenSourceHeader \| \
             xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
 alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
-dotconf config status.showUntrackedFiles no
+2>/dev/null dotconf config status.showUntrackedFiles no
 
 PATH="${PATH}:${HOME}/.local/bin"
 
@@ -195,14 +199,17 @@ fi
 
 # If bash runs in posix mode, if should be `cut -c2-` instead
 PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
+
+_PS1_HOST_CLR='\033[32m'
+_PS1_1='\[\033[31m\]\u\[\033[m\]@\['"${_PS1_HOST_CLR}"'\]\h\[\033[m\] \[\033[33m\][\w]'
+_PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
+_PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
+
 if [ -f "${HOME}"/git-prompt.sh ] && [ -r "${HOME}"/git-prompt.sh ] && \
                                      [ "${GIT_PROMPT}" = "1" ] ; then
     . "${HOME}"/git-prompt.sh
-    PS1='\[\033[31m\]\u\[\033[m\]@\[\033[32m\]\h\[\033[m\] \[\033[33m\][\w]'\
-'\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")\[\033[m\]\[\033[36m\]$(__norm)'\
-'\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
+    PS1="${_PS1_1}${_PS1_GIT}${_PS1_2}"
 else
-    PS1='\[\033[31m\]\u\[\033[m\]@\[\033[32m\]\h\[\033[m\] \[\033[33m\][\w]'\
-'\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[36m\]~\$\[\033[m\] '
+    PS1="${_PS1_1}${_PS1_2}"
 fi
 
