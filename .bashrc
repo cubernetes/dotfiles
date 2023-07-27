@@ -165,6 +165,7 @@ alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 
 PATH="${PATH}:${HOME}/.local/bin"
 
+export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
 export USER42='tischmid'
 export EMAIL42='timo42@proton.me'
 export MAIL='timo42@proton.me'
