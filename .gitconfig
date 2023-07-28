@@ -1,0 +1,14 @@
+[user]
+	name = cubernetes
+	email = timo42@protonmail.com
+[init]
+	defaultBranch = main
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+[alias]
+	s = status
+	a = add
+	ci = commit
