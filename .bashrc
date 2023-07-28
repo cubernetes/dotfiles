@@ -34,6 +34,7 @@ COMMANDS_="${COMMANDS_} paco francinette cd ls disown whoami reboot systemctl"
 COMMANDS_="${COMMANDS_} shutdown poweroff set x touch stat cp scp man locate"
 COMMANDS_="${COMMANDS_} xset kbdrate return cut batcat id ed vi vim nvim nano"
 COMMANDS_="${COMMANDS_} skill norminette bat echo if then fi else function"
+COMMANDS_="${COMMANDS_} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 # shellcheck disable=SC2086
 2>/dev/null \unset -f -- ${COMMANDS_}
 # shellcheck disable=SC2086
@@ -45,9 +46,13 @@ COMMANDS_="${COMMANDS_} skill norminette bat echo if then fi else function"
 shopt -s histappend
 shopt -s checkwinsize
 shopt -s dotglob
+shopt -s extglob
+shopt -u histverify
 HISTSIZE=-1
 HISTFILESIZE=-1
 HISTFILE="${HOME}"/.bash_history
+HISTCONTROL='ignoredups:erasedups:ignorespace'
+PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 function skill () {
@@ -65,6 +70,11 @@ function bat () {
 		1>/dev/null type -P bat && \
 		$(type -P bat) "${@}" || \
 		{ echo "bat not installed"; return 1; }
+}
+
+function take () {
+    mkdir -p -- "$1" &&
+       cd -P -- "$1"
 }
 
 function norminette () {
@@ -137,12 +147,19 @@ alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y clean'
 alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
               yes | sudo pacman -Syyuu && yes | paru'
+alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
-alias l='ls --color=auto -FhalrtZ1'
-alias ls='ls --color=auto'
-alias ll='ls --color=auto -FhalrtZ1'
+alias l='ls --width="${COLUMNS}" --color=auto -FhartZ1l'
+alias ll='ls --width="${COLUMNS}" --color=auto -FhartZ1l'
+alias ls='ls --width="${COLUMNS}" --color=auto -C'
+alias ip='ip --color=auto'
 alias grep='grep --color=auto'
+alias diff='diff --width="${COLUMNS}" --color=auto'
+alias less='less -SR'
+alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
+alias free='free -mht'
+alias tree='tree --dirsfirst -C'
 alias francinette='"${HOME}"/francinette/tester.sh'
 alias paco='"${HOME}"/francinette/tester.sh'
 alias p='pulsemixer'
@@ -155,6 +172,7 @@ alias sl='sl -GwFdcal'
 alias cmatrix='cmatrix -u3 -Cred'
 alias gca='git add -u && git commit -m "Automatic add"'
 alias watch='watch -tcn.1'
+alias pacop='clear && 2>/dev/null paco && 2>/dev/null paco --strict'
 alias norm='alacritty -e sh -c '\''watch -cn.5 \
             norminette -R CheckForbiddenSourceHeader'\'' & disown'
 alias norm2='alacritty -e sh -c '\''watch -cn.5 \
@@ -164,6 +182,7 @@ alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 2>/dev/null dotconf config status.showUntrackedFiles no
 
 PATH="${PATH}:${HOME}/.local/bin"
+PATH="${PATH}:${HOME}/.brew/bin"
 
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
 export USER42='tischmid'
