@@ -21,6 +21,9 @@ lsp.ensure_installed({
 	'eslint',
 	'lua_ls',
 	'rust_analyzer',
+	'html',
+	'pyright',
+	'jsonls',
 })
 
 local cmp = require('cmp')
