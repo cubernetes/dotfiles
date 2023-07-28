@@ -43,6 +43,7 @@ COMMANDS_="${COMMANDS_} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 # Bash Shell Reset -- End
 
 [ -z "${PS1}" ] && return
+set -o emacs
 shopt -s histappend
 shopt -s checkwinsize
 shopt -s dotglob
@@ -51,9 +52,22 @@ shopt -u histverify
 HISTSIZE=-1
 HISTFILESIZE=-1
 HISTFILE="${HOME}"/.bash_history
+HISTTIMEFORMAT='%F %T: '
 HISTCONTROL='ignoredups:erasedups:ignorespace'
 PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+pathadd () {
+	# just works
+    NORM_PATH=":${PATH}:"
+    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
+	# TODO: Handle Slashes
+    NORM_PATH_TO_ADD=":${1}:"
+    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
+    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
+        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
+    fi
+}
 
 function skill () {
 	if [ -n "${1}" ] ; then
@@ -66,20 +80,23 @@ function skill () {
 }
 
 function bat () {
-	2>/dev/null batcat "${@}" || \
-		1>/dev/null type -P bat && \
-		$(type -P bat) "${@}" || \
-		{ echo "bat not installed"; return 1; }
+	2>/dev/null command -v batcat && { batcat "${@}"; return 0; }
+	2>/dev/null command -v bat && { bat "${@}"; return 0; }
+	{ printf '%s\n' "bat not found"; return 1; }
 }
 
 function take () {
     mkdir -p -- "$1" &&
-       cd -P -- "$1"
+       cd -P -- "$1" ||
+		return 1;
 }
 
 function norminette () {
-	local vers="$($(type -P norminette) -v | cut -d" " -f2)"
-	local newst='3.3.53'
+	local vers
+	local newst
+
+	vers="$($(type -P norminette) -v | cut -d" " -f2)"
+	newst='3.3.53'
 	if [ ! "${vers}" = "${newst}" ] ; then
 		printf "%s\n%b\n" "Norminette v${vers} instead of v${newst} detected."\
                           '\033[31mPlease up-/downgrade\033[m'
@@ -88,8 +105,10 @@ function norminette () {
 }
 
 function __norm () {
-	local _pwd="$(pwd -P)"
-	[ -z "${_pwd##${HOME}/42/42cursus/*}" ] || { return 1; }
+	local _pwd
+
+	_pwd="$(pwd -P)"
+	[ -z "${_pwd##"${HOME}"/42/42cursus/*}" ] || { return 1; }
 	1>/dev/null 2>&1 git status || { return 2; }
     1>/dev/null 2>&1 norminette && printf ' \033[92m%s\033[m' "[Norm: OK]" || printf ' \033[101;37m%s\033[m' "[䝝誒 ‼ NORM ‼ 屌誒]"
     return 0
@@ -124,17 +143,29 @@ function clone42 () {
     folder="${1}"
     repo_url="${2}"
 
-    git clone --quiet "${repo_url}" ${folder}
-    if [ "${?}" = "0" ]; then
-        cd "${folder}"
-		norminette -R CheckForbiddenSourceHeader "."
-    else
-        printf '%s\n' "Could not clone repo!"
-    fi
+	# shellcheck disable=SC2015
+    git clone --quiet "${repo_url}" "${folder}" && {
+        cd "${folder}";
+		norminette -R CheckForbiddenSourceHeader ".";
+	} || { printf '%s\n' "Could not clone repo!"; }
 }
 
-alias v=nvim
-alias vim=nvim
+if 2>/dev/null 1>&2 command -v nvim; then
+    alias v='nvim'
+    alias vi='nvim'
+    alias vim='nvim'
+elif 2>/dev/null 1>&2 command -v vim; then
+    alias v='vim'
+    alias vi='vim'
+elif 2>/dev/null 1>&2 command -v nvi; then
+    alias v='nvi'
+    alias vi='nvi'
+elif 2>/dev/null 1>&2 command -v vi; then
+    alias v='vi'
+fi
+
+alias v='nvim'
+alias vim='nvim'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
@@ -162,8 +193,8 @@ alias free='free -mht'
 alias tree='tree --dirsfirst -C'
 alias francinette='"${HOME}"/francinette/tester.sh'
 alias paco='"${HOME}"/francinette/tester.sh'
-alias p='pulsemixer'
-alias e='nvim "${HOME}"/repos/dwm/config.h'
+alias wttr='curl wttr.in'
+alias s='sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
 alias colors='bash -c "$(curl --silent --location \
 "https://gist.githubusercontent.com/HaleTom/\
 89ffe32783f89f403bba96bd7bcd1263/raw"
@@ -181,12 +212,9 @@ alias norm2='alacritty -e sh -c '\''watch -cn.5 \
 alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 2>/dev/null dotconf config status.showUntrackedFiles no
 
-PATH="${PATH}:${HOME}/.local/bin"
-PATH="${PATH}:${HOME}/.local/include"
-PATH="${PATH}:${HOME}/.brew/bin"
-
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 
+# shellcheck disable=SC2016
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
 export USER42='tischmid'
 export EMAIL42='timo42@proton.me'
@@ -208,7 +236,30 @@ export EDITOR="$(2>/dev/null command -v vim  ||
 export SUDO_EDITOR="${EDITOR}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
 export LD_LIBRARY_PATH
+export GOPATH="${HOME}"/go
+
+# pathadd '/bin'
+# pathadd '/sbin'
+# pathadd '/usr/bin'
+# pathadd '/usr/sbin'
+# pathadd '/usr/local/bin'
+# pathadd '/usr/lcoal/sbin'
+# pathadd '/usr/local/games'
+# pathadd '/usr/games'
+# pathadd '/snap/bin'
+# pathadd "${HOME}"/bin
+# pathadd "${HOME}"/.local/bin
+# pathadd "${HOME}"/.local/include
+# pathadd "${HOME}"/.brew/bin
+# pathadd "${GOPATH}"/bin
 export PATH
+
+export NVM_DIR="${HOME}"/.nvm
+# shellcheck disable=SC1091
+[ -s "${NVM_DIR}"/nvm.sh ] && . "${NVM_DIR}"/nvm.sh
+# shellcheck disable=SC1091
+[ -s "${NVM_DIR}"/bash_completion ] && . "${NVM_DIR}"/bash_completion
+
 
 2>/dev/null xset r rate 200 60
 # sudo kbdrate --rate=30.0 --delay=250
@@ -222,18 +273,38 @@ if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT}" = "1" ] ; then
 fi
 
 # If bash runs in posix mode, if should be `cut -c2-` instead
+# shellcheck disable=SC2016
 PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
-_PS1_HOST_CLR='\033[32m'
-_PS1_1='\[\033[31m\]\u\[\033[m\]@\['"${_PS1_HOST_CLR}"'\]\h\[\033[m\] \[\033[33m\][\w]'
+_PS1_CWD_CLR='\[\033[33m\]'
+_PS1_USER='\[\033[31m\]\u\[\033[m\]'
+_PS1_SSH="$(
+	set | grep -sq ^SSH_CONNECTION && printf "@\[\033[36m\]%s\[\033[m\]" "ssh"
+)"
+_PS1_TMUX="$(
+	set | grep -sq ^TMUX_PANE && printf "@\[\033[35m\]%s\[\033[m\]" "tmux"
+)"
+[ -n "${_PS1_SSH}" ] && _PS1_HOST_CLR='\[\033[30;42m\]' || \
+                        _PS1_HOST_CLR='\[\033[32m\]'
+_PS1_1="${_PS1_USER}"
+_PS1_1="${_PS1_1}@${_PS1_HOST_CLR}"
+_PS1_1="${_PS1_1}\h\[\033[m\]"
+_PS1_1="${_PS1_1}${_PS1_SSH}${_PS1_TMUX} "
+_PS1_1="${_PS1_1}${_PS1_CWD_CLR}"
+_PS1_1="${_PS1_1}[\w]"
+# shellcheck disable=SC2016
 _PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
+# shellcheck disable=SC2016
 _PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 
 if [ -f "${HOME}"/git-prompt.sh ] && [ -r "${HOME}"/git-prompt.sh ] && \
                                      [ "${GIT_PROMPT}" = "1" ] ; then
+	# shellcheck disable=SC1091
     . "${HOME}"/git-prompt.sh
     PS1="${_PS1_1}${_PS1_GIT}${_PS1_2}"
 else
     PS1="${_PS1_1}${_PS1_2}"
 fi
 
+# shellcheck disable=SC1091
+if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
