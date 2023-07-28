@@ -182,7 +182,10 @@ alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 2>/dev/null dotconf config status.showUntrackedFiles no
 
 PATH="${PATH}:${HOME}/.local/bin"
+PATH="${PATH}:${HOME}/.local/include"
 PATH="${PATH}:${HOME}/.brew/bin"
+
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
 export USER42='tischmid'
@@ -204,6 +207,7 @@ export EDITOR="$(2>/dev/null command -v vim  ||
                  2>/dev/null command -v ed)"
 export SUDO_EDITOR="${EDITOR}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
+export LD_LIBRARY_PATH
 export PATH
 
 2>/dev/null xset r rate 200 60
