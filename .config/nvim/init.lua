@@ -1,2 +1,2 @@
 require("tosu")
-vim.cmd('source /home/tosuman/.vim/plugin/stdheader.vim')
+vim.cmd('source ~/.vim/plugin/stdheader.vim')
