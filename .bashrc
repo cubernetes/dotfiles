@@ -57,18 +57,6 @@ HISTCONTROL='ignoredups:erasedups:ignorespace'
 PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-pathadd () {
-	# just works
-    NORM_PATH=":${PATH}:"
-    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
-	# TODO: Handle Slashes
-    NORM_PATH_TO_ADD=":${1}:"
-    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
-    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
-        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
-    fi
-}
-
 function skill () {
 	if [ -n "${1}" ] ; then
 		# shellcheck disable=SC2046,SC2009
@@ -81,7 +69,7 @@ function skill () {
 
 function bat () {
 	2>/dev/null command -v batcat && { batcat "${@}"; return 0; }
-	2>/dev/null command -v bat && { bat "${@}"; return 0; }
+	2>/dev/null command -v bat && { $(type -P bat) "${@}"; return 0; }
 	{ printf '%s\n' "bat not found"; return 1; }
 }
 
@@ -169,6 +157,8 @@ alias vim='nvim'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias sudo='sudo '
+alias watch='watch '
 alias tmux='tmux -2'
 alias open='xdg-open'
 alias xcopy='xsel --clipboard --input'
@@ -212,20 +202,9 @@ alias norm2='alacritty -e sh -c '\''watch -cn.5 \
 alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 2>/dev/null dotconf config status.showUntrackedFiles no
 
-LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
-
 # shellcheck disable=SC2016
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
-export USER42='tischmid'
-export EMAIL42='timo42@proton.me'
-export MAIL='timo42@proton.me'
-export LANG='en_US.UTF-8'
-export LC_ALL='en_US.UTF-8'
 export TERM='xterm-256color'
-# shellcheck disable=SC2155
-export XDG_RUNTIME_DIR=/run/user/"$(id -u)"
-# shellcheck disable=SC2155
-export SSH_AUTH_SOCK=/run/user/"$(id -u)"/ssh-agent.socket
 # shellcheck disable=SC2155
 export VISUAL="$(2>/dev/null command -v nvim)"
 # shellcheck disable=SC2155
@@ -235,36 +214,9 @@ export EDITOR="$(2>/dev/null command -v vim  ||
                  2>/dev/null command -v ed)"
 export SUDO_EDITOR="${EDITOR}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
-export LD_LIBRARY_PATH
-export GOPATH="${HOME}"/go
+export MANPAGER='nvim +Man!'
 
-# pathadd '/bin'
-# pathadd '/sbin'
-# pathadd '/usr/bin'
-# pathadd '/usr/sbin'
-# pathadd '/usr/local/bin'
-# pathadd '/usr/lcoal/sbin'
-# pathadd '/usr/local/games'
-# pathadd '/usr/games'
-# pathadd '/snap/bin'
-# pathadd "${HOME}"/bin
-# pathadd "${HOME}"/.local/bin
-# pathadd "${HOME}"/.local/include
-# pathadd "${HOME}"/.brew/bin
-# pathadd "${GOPATH}"/bin
-export PATH
-
-export NVM_DIR="${HOME}"/.nvm
-# shellcheck disable=SC1091
-[ -s "${NVM_DIR}"/nvm.sh ] && . "${NVM_DIR}"/nvm.sh
-# shellcheck disable=SC1091
-[ -s "${NVM_DIR}"/bash_completion ] && . "${NVM_DIR}"/bash_completion
-
-
-2>/dev/null xset r rate 200 60
-# sudo kbdrate --rate=30.0 --delay=250
-
-GIT_PROMPT="1"
+GIT_PROMPT="0"
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT}" = "1" ] ; then
 	curl --silent --location \
 "https://raw.githubusercontent.com/git\
