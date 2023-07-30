@@ -442,9 +442,9 @@ debug:
 # You can set shell.program to the path of your favorite shell, e.g. /bin/fish.
 # Entries in shell.args are passed unmodified as arguments to the shell.
 shell:
-  program: /bin/bash
+  program: /bin/sh
   args:
     - -c
-    - tmux
+    - stdout="$(tmux ls -F '#{session_name}|#{?session_attached,attached,not attached}' | grep 'not attached$')"; [ "$?" = "0" ] && tmux -2 attach -t "$(printf ${stdout} | tail -1 | cut -d'|' -f1)" || tmux
 
 # vim: nospell
