@@ -1,7 +1,7 @@
 #!/usr/bin/bash
-# This file ought to be sourced
+# This file ought to be sourced, above line for syntax highlighting purposes.
 
-# Bash Shell Reset -- Start
+######################## BASH RESET #############################
 IFS=" 
 	"
 POSIXLY_CORRECT='1'
@@ -40,7 +40,7 @@ COMMANDS_="${COMMANDS_} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 # shellcheck disable=SC2086
 2>/dev/null \unalias -- ${COMMANDS_}
 2>/dev/null \unset -- POSIXLY_CORRECT COMMANDS_
-# Bash Shell Reset -- End
+######################## BASH RESET END #############################
 
 [ -z "${PS1}" ] && return
 set -o emacs
@@ -52,9 +52,9 @@ shopt -u histverify
 HISTSIZE=-1
 HISTFILESIZE=-1
 HISTFILE="${HOME}"/.bash_history
-HISTTIMEFORMAT='%F %T: '
+HISTTIMEFORMAT=$'\033[m%F %T: '
 HISTCONTROL='ignoredups:erasedups:ignorespace'
-PROMPT_COMMAND="history -n; history -w; history -c; history -r"
+# PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 function skill () {
@@ -171,9 +171,9 @@ alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
-alias l='ls --width="${COLUMNS}" --color=auto -FhartZ1l'
-alias ll='ls --width="${COLUMNS}" --color=auto -FhartZ1l'
-alias ls='ls --width="${COLUMNS}" --color=auto -C'
+alias l='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --time-style=long-iso -bFharZ1l'
+alias ll='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --fu -bFharZ1l'
+alias ls='\ls --width="${COLUMNS}" --color=auto -bC'
 alias ip='ip --color=auto'
 alias grep='grep --color=auto'
 alias diff='diff --width="${COLUMNS}" --color=auto'
@@ -216,17 +216,19 @@ export SUDO_EDITOR="${EDITOR}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
 export MANPAGER='nvim +Man!'
 
-GIT_PROMPT="0"
+
+###################### PROMPT STUFF #######################
+# If bash runs in posix mode, if should be `cut -c2-` instead
+# shellcheck disable=SC2016
+PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
+
+GIT_PROMPT="1"
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT}" = "1" ] ; then
 	curl --silent --location \
 "https://raw.githubusercontent.com/git\
 /git/master/contrib/completion/git-prompt.sh" \
 	-o "${HOME}"/git-prompt.sh
 fi
-
-# If bash runs in posix mode, if should be `cut -c2-` instead
-# shellcheck disable=SC2016
-PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
 _PS1_CWD_CLR='\[\033[33m\]'
 _PS1_USER='\[\033[31m\]\u\[\033[m\]'
@@ -257,6 +259,8 @@ if [ -f "${HOME}"/git-prompt.sh ] && [ -r "${HOME}"/git-prompt.sh ] && \
 else
     PS1="${_PS1_1}${_PS1_2}"
 fi
+######################### PROMPT STUFF END #######################
+
 
 # shellcheck disable=SC1091
 if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
