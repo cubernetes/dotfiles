@@ -5,3 +5,6 @@ set colored-completion-prefix on
 set colored-stats on
 set completion-query-items 0
 set page-completions off
+
+TAB: menu-complete
+"\e[Z": menu-complete-backward
