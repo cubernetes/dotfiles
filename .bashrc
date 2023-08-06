@@ -57,6 +57,71 @@ HISTCONTROL='ignoredups:erasedups:ignorespace'
 # PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
+if 2>/dev/null 1>&2 command -v nvim; then
+    alias v='nvim'
+    alias vi='nvim'
+    alias vim='nvim'
+elif 2>/dev/null 1>&2 command -v vim; then
+    alias v='vim'
+    alias vi='vim'
+elif 2>/dev/null 1>&2 command -v nvi; then
+    alias v='nvi'
+    alias vi='nvi'
+elif 2>/dev/null 1>&2 command -v vi; then
+    alias v='vi'
+fi
+
+alias v='nvim'
+alias vim='nvim'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias sudo='sudo '
+alias watch='watch '
+alias tmux='tmux -2'
+alias open='xdg-open'
+alias xcopy='xsel --clipboard --input'
+alias xpaste='xsel --clipboard --output'
+alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
+                sudo apt -y dist-upgrade && sudo apt -y autoremove &&
+                sudo apt -y clean'
+alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
+              yes | sudo pacman -Syyuu && yes | paru'
+alias pacman='pacman --color=auto'
+alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
+alias after='nvim "${HOME}"/.config/nvim/after/plugin'
+alias l='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
+# alias l='lsd --timesort --color=auto -harZ1l'
+alias ll='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
+alias ls='\ls --width="${COLUMNS}" --color=auto -bC'
+alias ip='ip --color=auto'
+alias grep='grep --color=auto'
+alias diff='diff --width="${COLUMNS}" --color=auto'
+alias less='less -SR'
+alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
+alias free='free -mht'
+alias tree='tree --dirsfirst -C'
+alias francinette='"${HOME}"/francinette/tester.sh'
+alias paco='"${HOME}"/francinette/tester.sh'
+alias wttr='curl wttr.in'
+alias s='sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
+alias colors='bash -c "$(curl --silent --location \
+"https://gist.githubusercontent.com/HaleTom/\
+89ffe32783f89f403bba96bd7bcd1263/raw"
+)"'
+alias sl='sl -GwFdcal'
+alias cmatrix='cmatrix -u3 -Cred'
+alias gca='git add -u && git commit -m "Automatic add"'
+alias watch='watch -tcn.1'
+alias pacop='clear && 2>/dev/null paco && 2>/dev/null paco --strict'
+alias norm='alacritty -e sh -c '\''watch -cn.5 \
+            norminette -R CheckForbiddenSourceHeader'\'' & disown'
+alias norm2='alacritty -e sh -c '\''watch -cn.5 \
+            norminette -R CheckForbiddenSourceHeader \| \
+            xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
+alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
+2>/dev/null dotconf config status.showUntrackedFiles no
+
 function skill () {
 	if [ -n "${1}" ] ; then
 		# shellcheck disable=SC2046,SC2009
@@ -138,70 +203,6 @@ function clone42 () {
 	} || { printf '%s\n' "Could not clone repo!"; }
 }
 
-if 2>/dev/null 1>&2 command -v nvim; then
-    alias v='nvim'
-    alias vi='nvim'
-    alias vim='nvim'
-elif 2>/dev/null 1>&2 command -v vim; then
-    alias v='vim'
-    alias vi='vim'
-elif 2>/dev/null 1>&2 command -v nvi; then
-    alias v='nvi'
-    alias vi='nvi'
-elif 2>/dev/null 1>&2 command -v vi; then
-    alias v='vi'
-fi
-
-alias v='nvim'
-alias vim='nvim'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias sudo='sudo '
-alias watch='watch '
-alias tmux='tmux -2'
-alias open='xdg-open'
-alias xcopy='xsel --clipboard --input'
-alias xpaste='xsel --clipboard --output'
-alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
-                sudo apt -y dist-upgrade && sudo apt -y autoremove &&
-                sudo apt -y clean'
-alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
-              yes | sudo pacman -Syyuu && yes | paru'
-alias pacman='pacman --color=auto'
-alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
-alias after='nvim "${HOME}"/.config/nvim/after/plugin'
-alias l='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --time-style=long-iso -bFharZ1l'
-alias ll='\ls --width="${COLUMNS}" --sort=time --time=mtime --color=auto --fu -bFharZ1l'
-alias ls='\ls --width="${COLUMNS}" --color=auto -bC'
-alias ip='ip --color=auto'
-alias grep='grep --color=auto'
-alias diff='diff --width="${COLUMNS}" --color=auto'
-alias less='less -SR'
-alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
-alias free='free -mht'
-alias tree='tree --dirsfirst -C'
-alias francinette='"${HOME}"/francinette/tester.sh'
-alias paco='"${HOME}"/francinette/tester.sh'
-alias wttr='curl wttr.in'
-alias s='sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
-alias colors='bash -c "$(curl --silent --location \
-"https://gist.githubusercontent.com/HaleTom/\
-89ffe32783f89f403bba96bd7bcd1263/raw"
-)"'
-alias sl='sl -GwFdcal'
-alias cmatrix='cmatrix -u3 -Cred'
-alias gca='git add -u && git commit -m "Automatic add"'
-alias watch='watch -tcn.1'
-alias pacop='clear && 2>/dev/null paco && 2>/dev/null paco --strict'
-alias norm='alacritty -e sh -c '\''watch -cn.5 \
-            norminette -R CheckForbiddenSourceHeader'\'' & disown'
-alias norm2='alacritty -e sh -c '\''watch -cn.5 \
-            norminette -R CheckForbiddenSourceHeader \| \
-            xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
-alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
-2>/dev/null dotconf config status.showUntrackedFiles no
-
 # shellcheck disable=SC2016
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
 export TERM='xterm-256color'
@@ -215,6 +216,7 @@ export EDITOR="$(2>/dev/null command -v vim  ||
 export SUDO_EDITOR="${EDITOR}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
 export MANPAGER='nvim +Man!'
+[ -z "${DISPLAY}" ] && echo 'Warning: DISPLAY is not set'
 
 
 ###################### PROMPT STUFF #######################
@@ -261,6 +263,15 @@ else
 fi
 ######################### PROMPT STUFF END #######################
 
+# Key Repeat/Delay Rate
+2>/dev/null xset r rate 200 60
+# Disable bell
+2>/dev/null xset -b
+# sudo kbdrate --rate=30.0 --delay=250
+
 
 # shellcheck disable=SC1091
 if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
+
+# Simplified *Bash* Prompt, e.g. for tty/system/linux console
+# unset PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
