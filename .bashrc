@@ -85,8 +85,9 @@ alias xpaste='xsel --clipboard --output'
 alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y dist-upgrade && sudo apt -y autoremove &&
                 sudo apt -y clean'
-alias paruuu='yes | sudo pacman -Sy archlinux-keyring &&
-              yes | sudo pacman -Syyuu && yes | paru'
+alias paruuu='   yes | sudo pacman -Sy archlinux-keyring \
+              && yes | sudo pacman -Syyuu --noconfirm \
+              && yes | paru --devel --noconfirm'
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
