@@ -1,0 +1,118 @@
+#!/usr/bin/bash
+# xrandr --setprovideroutputsource 1 0 --setprovideroutputsource 2 0
+
+# Configure Displays
+three-mon
+# xrandr --newmode "1600x900_60.00"  119.00  1600 1696 1864 2128  900 901 904 932  -HSync +Vsync
+# xrandr --addmode DVI-I-1-1 "1600x900_60.00"
+# xrandr --above DP-1 --output DVI-I-1-1 --auto --mode "1600x900_60.00" --left-of DP-1
+
+# Wallpaper Diashows
+# wp-dia hor eDP-1 10m
+# wp-dia wp-repo-1 HDMI-1 10m
+# wp-dia wp-repo-1 DP-1 10m
+
+# Keymap
+setxkbmap -layout us
+
+# Enable Touchpad While Typing
+# xinput |
+# 	grep Touchpad |
+# 	awk '{print $6}' |
+# 	sed "s/id=//" - |
+# 	{
+# 		read iid; xinput list-props $iid |
+# 		grep "Typing Enabled (" |
+# 		awk '{gsub(/\(|\)|:/,""); print $6}' |
+# 		xargs -I 'pid' xinput set-prop $iid 'pid' 0;
+# 	}
+
+updatebar
+
+
+
+
+
+######################## More or less shell specific #####################
+pathadd () {
+	# just works
+    NORM_PATH=":${PATH}:"
+    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
+	# TODO: Handle Slashes
+    NORM_PATH_TO_ADD=":${1}:"
+    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
+    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
+        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
+    fi
+}
+export pathadd
+
+ld_lib_path_add () {
+	# just works
+    NORM_PATH=":${PATH}:"
+    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
+	# TODO: Handle Slashes
+    NORM_PATH_TO_ADD=":${1}:"
+    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
+    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
+        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
+    fi
+}
+export ld_lib_path_add
+
+eval "$(pyenv init --path)"
+
+# shellcheck disable=SC2155
+export XDG_RUNTIME_DIR=/run/user/"$(id -u)"
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}"/ssh-agent.socket
+# export SUDO_ASKPASS='/usr/bin/sudo-askpass'
+# export SSH_ASKPASS='/usr/bin/sudo-askpass'
+# export SSH_ASKPASS_REQUIRE='prefer'
+export GIT_CONFIG_GLOBAL="${HOME}"/.gitconfig
+
+export USER42='tischmid'
+export EMAIL42='timo42@proton.me'
+export MAIL='timo42@proton.me'
+
+export LANG='en_US.UTF-8'
+export LC_ALL='en_US.UTF-8'
+
+export GOPATH="${HOME}"/go
+
+ld_lib_path_add "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
+export LD_LIBRARY_PATH
+
+pathadd '/bin'
+pathadd '/sbin'
+pathadd '/usr/bin'
+pathadd '/usr/sbin'
+pathadd '/usr/local/bin'
+pathadd '/usr/lcoal/sbin'
+pathadd '/usr/local/games'
+pathadd '/usr/games'
+pathadd '/snap/bin'
+pathadd "${HOME}"/bin
+pathadd "${HOME}"/.local/bin
+pathadd "${HOME}"/.local/include
+pathadd "${HOME}"/.brew/bin
+pathadd "${GOPATH}"/bin
+export PATH
+
+# add cargo bin to path
+if [ -f "${HOME}"/.cargo/env ] || [ -r "${HOME}"/.cargo/env ]; then
+	# shellcheck disable=SC1091
+	. "${HOME}"/.cargo/env
+fi
+
+export NVM_DIR="${HOME}"/.nvm
+# shellcheck disable=SC1091
+[ -s "${NVM_DIR}"/nvm.sh ] && . "${NVM_DIR}"/nvm.sh
+# shellcheck disable=SC1091
+[ -s "${NVM_DIR}"/bash_completion ] && . "${NVM_DIR}"/bash_completion
+######################## More or less shell specific END #####################
+
+nohup startlxde & disown
+while true ; do
+	dwm
+	sleep 0.5
+done
