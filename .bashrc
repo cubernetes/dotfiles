@@ -89,8 +89,8 @@ alias paruu='    printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
               && yes | sudo pacman -Sy archlinux-keyring \
               && printf "\033[30;41m%s\033[m\n" "pacman -Syyuu --noconfirm" \
               && yes | sudo pacman -Syyuu --noconfirm \
-              && printf "\033[30;41m%s\033[m\n" "paru -Syyuu --devel --noconfirm" \
-              && yes | paru -Syyuu --devel --noconfirm \
+              && printf "\033[30;41m%s\033[m\n" "paru -Syu --devel --noconfirm" \
+              && yes | paru -Syu --devel --noconfirm \
               && printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
               && pacman -Qtdq | sudo pacman --noconfirm -Rns - \
               && printf "\033[30;41m%s\033[m\n" "########## Done #########"'
@@ -250,6 +250,8 @@ if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
 /bash-preexec/master/bash-preexec.sh" \
 	-o "${HOME}"/.bash-preexec.sh
 fi
+
+# shellcheck disable=SC1091
 . "${HOME}"/.bash-preexec.sh
 
 preexec() {
