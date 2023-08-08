@@ -85,9 +85,16 @@ alias xpaste='xsel --clipboard --output'
 alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y dist-upgrade && sudo apt -y autoremove &&
                 sudo apt -y clean'
-alias paruuu='   yes | sudo pacman -Sy archlinux-keyring \
+alias paruu='    printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
+              && yes | sudo pacman -Sy archlinux-keyring \
+              && printf "\033[30;41m%s\033[m\n" "pacman -Syyuu --noconfirm" \
               && yes | sudo pacman -Syyuu --noconfirm \
-              && yes | paru --devel --noconfirm'
+              && printf "\033[30;41m%s\033[m\n" "paru -Syyuu --devel --noconfirm" \
+              && yes | paru -Syyuu --devel --noconfirm \
+              && printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
+              && pacman -Qtdq | sudo pacman --noconfirm -Rns - \
+              && printf "\033[30;41m%s\033[m\n" "########## Done #########"'
+alias paruuu='   clear && time (paruu)'
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
@@ -206,7 +213,19 @@ function clone42 () {
 
 # shellcheck disable=SC2016
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME}"/.ssh/config'
-export TERM='xterm-256color'
+if [ ! "${TERM}" = "linux" ] ; then
+	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
+		export TERM='xterm-256color'
+	elif [ -f '/usr/share/terminfo/x/xterm-color' ] ; then
+		export TERM='xterm-color'
+	elif [ -f '/usr/share/terminfo/x/xterm' ] ; then
+		export TERM='xterm'
+	elif [ -f '/usr/share/terminfo/s/screen-256color' ] ; then
+		export TERM='screen-256color'
+	elif [ -f '/usr/share/terminfo/s/screen' ] ; then
+		export TERM='screen'
+	fi
+fi
 # shellcheck disable=SC2155
 export VISUAL="$(2>/dev/null command -v nvim)"
 # shellcheck disable=SC2155
@@ -224,6 +243,37 @@ export MANPAGER='nvim +Man!'
 # If bash runs in posix mode, if should be `cut -c2-` instead
 # shellcheck disable=SC2016
 PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
+
+if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
+	curl --silent --location \
+"https://raw.githubusercontent.com/rcaloras\
+/bash-preexec/master/bash-preexec.sh" \
+	-o "${HOME}"/.bash-preexec.sh
+fi
+. "${HOME}"/.bash-preexec.sh
+
+preexec() {
+	TIMESTAMP_BEFORE="$(date +%s)"
+}
+precmd() {
+	local sec_diff
+	local TIMESTAMP_NOW
+
+	TIMESTAMP_NOW="$(date +%s)"
+	sec_diff="$(( TIMESTAMP_NOW - TIMESTAMP_BEFORE ))"
+	if [ -n "${TIMESTAMP_BEFORE}" ] && [ "${sec_diff}" -ge "5" ] ; then
+		TOOK_STRING=' took '
+		mins="$((sec_diff / 60))"
+		secs="$((sec_diff % 60))"
+		if [ "${mins}" = "0" ] ; then
+			TOOK_STRING="${TOOK_STRING}${secs}s"
+		else
+			TOOK_STRING="${TOOK_STRING}${mins}m${secs}s"
+		fi
+	else
+		unset -v -- TOOK_STRING
+	fi
+}
 
 GIT_PROMPT="1"
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT}" = "1" ] ; then
@@ -248,7 +298,7 @@ _PS1_1="${_PS1_1}@${_PS1_HOST_CLR}"
 _PS1_1="${_PS1_1}\h\[\033[m\]"
 _PS1_1="${_PS1_1}${_PS1_SSH}${_PS1_TMUX} "
 _PS1_1="${_PS1_1}${_PS1_CWD_CLR}"
-_PS1_1="${_PS1_1}[\w]"
+_PS1_1="${_PS1_1}[\w]\${TOOK_STRING}"
 # shellcheck disable=SC2016
 _PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
 # shellcheck disable=SC2016
