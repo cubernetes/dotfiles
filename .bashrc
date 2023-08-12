@@ -85,16 +85,6 @@ alias xpaste='xsel --clipboard --output'
 alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y dist-upgrade && sudo apt -y autoremove &&
                 sudo apt -y clean'
-alias paruu='    printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
-              && yes | sudo pacman -Sy archlinux-keyring \
-              && printf "\033[30;41m%s\033[m\n" "pacman -Syyuu --noconfirm" \
-              && yes | sudo pacman -Syyuu --noconfirm \
-              && printf "\033[30;41m%s\033[m\n" "paru -Syu --devel --noconfirm" \
-              && yes | paru -Syu --devel --noconfirm \
-              && printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
-              && pacman -Qtdq | sudo pacman --noconfirm -Rns - \
-              && printf "\033[30;41m%s\033[m\n" "########## Done #########"'
-alias paruuu='   clear && time (paruu)'
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*/packer.lua'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
@@ -122,6 +112,7 @@ alias cmatrix='cmatrix -u3 -Cred'
 alias gca='git add -u && git commit -m "Automatic add"'
 alias watch='watch -tcn.1'
 alias pacop='clear && 2>/dev/null paco && 2>/dev/null paco --strict'
+alias xterm='xterm -bg black -fg white'
 alias norm='alacritty -e sh -c '\''watch -cn.5 \
             norminette -R CheckForbiddenSourceHeader'\'' & disown'
 alias norm2='alacritty -e sh -c '\''watch -cn.5 \
@@ -129,6 +120,49 @@ alias norm2='alacritty -e sh -c '\''watch -cn.5 \
             xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
 alias dotconf='git --git-dir="${HOME}"/.dotfiles/ --work-tree="${HOME}"'
 2>/dev/null dotconf config status.showUntrackedFiles no
+
+function paruuu () {
+	ssid="$(iw dev wlan0 link |
+			grep SSID |
+			sed -e 's/[[:blank:]]*SSID: //' \
+				-e 's/[[:blank:]]*$//'
+	)"
+	if : \
+		&& [ ! "${ssid}" = "Free Wifi" ] \
+		&& [ ! "${ssid}" = "FreeWifi" ] \
+		&& [ ! "${ssid}" = "DS_JD-Tree" ] \
+		&& [ ! "${ssid}" = "Haihin" ] \
+		&& [ ! "${ssid}" = "∞" ] \
+		&& [ ! "${ssid}" = "\xe2\x88\x9e" ] \
+		&& [ ! "${ssid}" = $'\xe2\x88\x9e' ] \
+		&& [ ! "${ssid}" = "Nichts 5" ] \
+		&& [ ! "${ssid}" = "Nichts 2,4" ] \
+		&& [ ! "${ssid}" = "Pink Flamingo" ] \
+		&& [ ! "${ssid}" = "Pink Flamingo_5G" ] \
+		&& [ ! "${ssid}" = "42Berlin_Student" ] \
+		&& [ ! "${ssid}" = "42Berlin_Guest" ] \
+		&& [ ! "${ssid}" = "ZorgatiHome Guest" ] \
+		&& [ ! "${ssid}" = "Hackme" ] \
+	&& : ; then
+		printf '\033[31m%s\033m\n' "You're connected to '${ssid}', do you want to continue?"
+		read X
+	else
+		clear
+		time (
+		printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
+			&& yes | sudo pacman -Sy archlinux-keyring \
+			&& printf "\033[30;41m%s\033[m\n" "pacman -Syyuu --noconfirm" \
+			&& yes | sudo pacman -Syyuu --noconfirm \
+			&& printf "\033[30;41m%s\033[m\n" "paru -Syu --devel --noconfirm" \
+			&& yes | paru -Syu --devel --noconfirm \
+			&& printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
+			&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
+			|| printf "\033[30;42m%s\033[m\n" "No orphan packages!"; } \
+		&& printf "\033[30;42m%s\033[m\n" "###### Done without error ######" \
+		|| printf "\033[30;41m%s\033[m\n" "###### Some error occured! ######"
+		)
+	fi
+}
 
 function skill () {
 	if [ -n "${1}" ] ; then
@@ -138,6 +172,11 @@ function skill () {
 	else
 		echo 'Please provide one argument'
 	fi
+}
+
+function wpa_restart () {
+	skill wpa_supplicant
+	sudo wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
 }
 
 function bat () {
@@ -322,9 +361,13 @@ fi
 2>/dev/null xset -b
 # sudo kbdrate --rate=30.0 --delay=250
 
+complete -C pomo pomo
 
 # shellcheck disable=SC1091
 if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
 # unset PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
+
+
+alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . ./env/bin/activate && pip install --no-input opencv-python mediapipe && pip freeze > ./requirements.txt && printf '\''#!/usr/bin/env python3\n\nfrom typing import NoReturn\n\nimport mediapipe as mp\nimport cv2\n\n\ndef main() -> NoReturn:\n\tpass\n\nif __name__ == '\''"'\''"'\''__main__'\''"'\''"'\'':\n\tmain()\n'\'' 1>./main.py && chmod +x ./main.py && printf '\''__pycache__/\nenv/\n'\'' 1>.gitignore && git init && git add -A && git commit -m '\''Initial commit'\'' && git ls-files && echo Done'

@@ -34,7 +34,7 @@ updatebar
 
 
 ######################## More or less shell specific #####################
-pathadd () {
+pathappend () {
 	# just works
     NORM_PATH=":${PATH}:"
     NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
@@ -45,7 +45,7 @@ pathadd () {
         PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
     fi
 }
-export pathadd
+export pathappend
 
 ld_lib_path_add () {
 	# just works
@@ -82,20 +82,20 @@ export GOPATH="${HOME}"/go
 ld_lib_path_add "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 export LD_LIBRARY_PATH
 
-pathadd '/bin'
-pathadd '/sbin'
-pathadd '/usr/bin'
-pathadd '/usr/sbin'
-pathadd '/usr/local/bin'
-pathadd '/usr/lcoal/sbin'
-pathadd '/usr/local/games'
-pathadd '/usr/games'
-pathadd '/snap/bin'
-pathadd "${HOME}"/bin
-pathadd "${HOME}"/.local/bin
-pathadd "${HOME}"/.local/include
-pathadd "${HOME}"/.brew/bin
-pathadd "${GOPATH}"/bin
+pathappend '/bin'
+pathappend '/sbin'
+pathappend '/usr/bin'
+pathappend '/usr/sbin'
+pathappend '/usr/local/bin'
+pathappend '/usr/lcoal/sbin'
+pathappend '/usr/local/games'
+pathappend '/usr/games'
+pathappend '/snap/bin'
+pathappend "${HOME}"/bin
+pathappend "${HOME}"/.local/bin
+pathappend "${HOME}"/.local/include
+pathappend "${HOME}"/.brew/bin
+pathappend "${GOPATH}"/bin
 export PATH
 
 # add cargo bin to path
