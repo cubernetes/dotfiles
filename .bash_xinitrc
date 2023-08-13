@@ -111,7 +111,7 @@ export NVM_DIR="${HOME}"/.nvm
 [ -s "${NVM_DIR}"/bash_completion ] && . "${NVM_DIR}"/bash_completion
 ######################## More or less shell specific END #####################
 
-nohup startlxde & disown
+nohup startlxde 2>/dev/null 1>&2 & disown
 while true ; do
 	dwm
 	sleep 0.5
