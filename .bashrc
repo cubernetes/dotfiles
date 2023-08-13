@@ -157,7 +157,7 @@ function paruuu () {
 			&& yes | paru -Syu --devel --noconfirm \
 			&& printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
 			&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
-			|| printf "\033[30;42m%s\033[m\n" "No orphan packages!"; } \
+			|| printf "\033[30;42m%s\033[m\n" "No pacman orphan packages :)!"; } \
 		&& printf "\033[30;42m%s\033[m\n" "###### Done without error ######" \
 		|| printf "\033[30;41m%s\033[m\n" "###### Some error occured! ######"
 		)
@@ -374,7 +374,7 @@ if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . ./env/bin/activate && pip install --no-input opencv-python mediapipe && pip freeze > ./requirements.txt && printf '\''#!/usr/bin/env python3\n\nfrom typing import NoReturn\n\nimport mediapipe as mp\nimport cv2\n\n\ndef main() -> NoReturn:\n\tpass\n\nif __name__ == '\''"'\''"'\''__main__'\''"'\''"'\'':\n\tmain()\n'\'' 1>./main.py && chmod +x ./main.py && printf '\''__pycache__/\nenv/\n'\'' 1>.gitignore && git init && git add -A && git commit -m '\''Initial commit'\'' && git ls-files && echo Done'
 alias check_for_tabs="clear && 2>/dev/null grep -r ' ' ../ | grep -v pre-rebase | grep -v sendemail | grep -v update.sample | grep -v fsmonitor | grep -v pre-push | grep -v commit-msg | grep -v pre-commit | grep -v push-to- | grep -v pre-receive | grep -v ChangeLog | grep -v '.git/config' | grep -v autogen | grep -v configure.ac | grep -v Makefile | grep -v debian | grep -v lxpolkit-listener | grep -v '.git' | grep -v desktop-files | grep -v autostart.vala | grep -v combobox | grep -v main.vala | grep -v vala | grep -v lxsession-default  | grep -v logout  | grep -v settings-daemon  | grep -v xdg-autostart | grep -v data/images | grep -v compile.sh | grep -v lxsession.xml | grep -v lxsession-utils"
 # alias lxsession-edit='cd /tmp/lxsession/lxsession-edit && ./compile.sh && 2>/dev/null ./lxsession-edit'
-function c () { 
+function x () { 
 	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g -O0 -o main *.c && ./main "${@}"
 	rm -f ./main
 }

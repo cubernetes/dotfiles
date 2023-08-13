@@ -79,6 +79,11 @@ _G.packer_plugins = {
     path = "/home/tosuman/.local/share/nvim/site/pack/packer/start/LuaSnip",
     url = "https://github.com/L3MON4D3/LuaSnip"
   },
+  ["autoclose.nvim"] = {
+    loaded = true,
+    path = "/home/tosuman/.local/share/nvim/site/pack/packer/start/autoclose.nvim",
+    url = "https://github.com/m4xshen/autoclose.nvim"
+  },
   ["c_formatter_42.vim"] = {
     loaded = true,
     path = "/home/tosuman/.local/share/nvim/site/pack/packer/start/c_formatter_42.vim",
