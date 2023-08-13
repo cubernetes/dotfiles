@@ -1,3 +1,5 @@
+vim.g.mapleader = ' '
+
 vim.opt.number = true
 vim.opt.relativenumber = true
 
@@ -37,6 +39,4 @@ vim.opt.updatetime = 50
 
 vim.opt.colorcolumn = '80'
 
-vim.opt.paste = true
-
-vim.g.mapleader = ' '
+vim.opt.paste = false
