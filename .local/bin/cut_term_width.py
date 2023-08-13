@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import re
 import sys
 
@@ -24,7 +25,14 @@ def pad_to_width(line: bytes, width: int) -> str:
     return output_line.decode('utf-8')
 
 def main() -> int:
-    width = int(sys.argv[1])
+    if len(sys.argv) != 2:
+        columns = os.environ.get('COLUMNS')
+        if columns:
+            width = int(columns)
+        else:
+            width = 20
+    else:
+        width = int(sys.argv[1])
     lines = open(0, 'rb').read().strip(b'\n').split(b'\n')
     for line in lines:
         try:
