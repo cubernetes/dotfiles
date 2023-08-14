@@ -1,0 +1,109 @@
+#!/bin/sh
+
+for pid in $(pgrep -f "updatebar") ; do
+	[ "${pid}" != "${$}" ] && 2>/dev/null kill -9 "${pid}"
+done
+
+dlm=" | "
+delay=1
+
+getDate() {
+	date="$(date +"%a %d/%m/%Y %H:%M:%S")"
+	# [ -n "${date}" ] && date="${dlm}^c#d08770^  ${date}^d^"
+	[ -n "${date}" ] && date="${dlm}^c#d08770^📅 ${date}^d^"
+	printf '%s' "${date}"
+}
+
+getBattery() {
+	battery="$(level="$(printf '%s' "$(($(cat /sys/class/power_supply/BAT1/energy_now) * 100000 / $(cat /sys/class/power_supply/BAT1/energy_full)))" | sed "s/\(...\)$/.\1%/")$([ "$(cat /sys/class/power_supply/BAT1/status)" = "Charging" ] && printf '%s' "+" || printf '%s' "-")" ; printf '%s' "${level}" ; printf '%s' "$(date "+%a %d/%m/%Y %H:%M:%S"): ${level}" >> /home/tosuman/.logs/battery.log)"
+	int_battery="$(printf '%s' "${battery}" | sed 's/\..*//')"
+	if [ "${int_battery}" -lt 11 ] && [ -z "$(pgrep -f qutebrowser)" ] ; then
+		xdotool key "alt+m"
+		xdotool key "alt+7"
+		1>/dev/null 2>&1 qutebrowser "/home/tosuman/infopages/battery_low.html" &
+
+	fi
+	# [ -n "${battery}" ] && battery="${dlm}^c#43f1f1^ ${battery}^d^"
+	[ -n "${battery}" ] && battery="${dlm}^c#43f1f1^🔋 ${battery}^d^"
+	printf '%s' "${battery}"
+}
+
+getLayout() {
+	layout="$(setxkbmap -query | grep layout | awk -F' ' '{ print $2 }')"
+	# [ -n "${layout}" ] && layout="${dlm}^c#a3be8c^ ${layout}^d^"
+	[ -n "${layout}" ] && layout="${dlm}^c#a3be8c^💻 ${layout}^d^"
+	printf '%s' "${layout}"
+}
+
+getWifi() {
+	wifi="$(iw dev wlan0 link | grep SSID | sed -e 's/[[:blank:]]*SSID: //' -e 's/[[:blank:]]*$//')"
+	[ -n "${wifi}" ] && wifi="${dlm}^c#bf616a^ ${wifi}^d^"
+	printf '%s' "${wifi}"
+}
+
+getEth () {
+	eth="$(2>/dev/null ip a show "$(ls /sys/class/net | grep enp | head -1)" | grep -v inet6 | grep inet | awk '{print $2}')"
+	[ -n "${eth}" ] && eth="${dlm}^c#bf616a^ ${eth}^d^"
+	printf '%s' "${eth}"
+}
+
+getNord() {
+	# return 1
+	nord="$(nordvpn status | grep Status | sed 's/.*Status: //')"
+	# [ -n "${nord}" ] && nord="${dlm}^c#8fbcbb^嬨 ${nord}^d^"
+	[ -n "${nord}" ] && nord="${dlm}^c#8fbcbb^🌐 ${nord}^d^"
+	printf '%s' "${nord}"
+}
+
+getBluetooth() {
+	bluetooth="$(bluetoothctl devices | cut -f2 -d' ' | while read -r uuid ; do bluetoothctl info "${uuid}" ; done | grep -e "Connected\|Name" | sed -e "s/\t//" - | perl -0777 -pe 's/Name: (.*?)\nConnected: yes/<<>>\1/' | grep "<<>>" | sed "s/<<>>//")"
+	[ -n "${bluetooth}" ] && bluetooth="${dlm}^c#81a1c1^ ${bluetooth}^d^"
+	printf '%s' "${bluetooth}"
+}
+
+getVolume() {
+	volume="$(pulsemixer --get-volume | cut -d' ' -f1)%"
+	[ -n "${volume}" ] && volume="${dlm}^c#93a1a1^🔊 ${volume}^d^"
+	printf '%s' "${volume}"
+}
+
+getRates() {
+	rxtxrates="$( (cat "${HOME}"/.datarates ; grep wlan0 /proc/net/dev) | awk '{if(l1){printf "%.3f ↑ %.3f ↓\n", ($2-l1)/1024^2*8, ($10-l2)/1024^2*8} else{l1=$2; l2=$10;}}' )"
+	grep wlan0 /proc/net/dev > "${HOME}/.datarates"
+	[ -n "${rxtxrates}" ] && rxtxrates="${dlm}^c#92ee791^${rxtxrates}^d^"
+	printf '%s' "${rxtxrates}"
+}
+
+getCpuTemp() {
+	temp="$(($(cat /sys/class/thermal/thermal_zone0/temp) / 1000))°C"
+	[ -n "${temp}" ] && temp="${dlm}^c#13a1a1^🌡️ ${temp}^d^"
+	printf '%s' "${temp}"
+}
+
+getWattage() {
+	wattage="$(awk '{printf "%.0f", $1*10^-6}' /sys/class/power_supply/BAT1/power_now)"
+	[ -n "${wattage}" ] && wattage="${dlm}^c#5e81ac^⚡ ${wattage}W^d^"
+	printf '%s' "${wattage}"
+
+}
+
+getBrightness() {
+	brightness="$(cat /sys/class/backlight/amdgpu_bl1/brightness)/255"
+	[ -n "${brightness}" ] && brightness="${dlm}^c#4321f1^🔆 ${brightness}^d^"
+	printf '%s' "${brightness}"
+}
+
+getNumberOfTmuxSessions() {
+	numberOfSessions="$(2>/dev/null tmux ls | wc -l)"
+	[ ! "${numberOfSessions}" = "0" ] && numberOfSessions="${dlm}^c#92ee791^ ${numberOfSessions}^d^"
+	printf '%s' "${numberOfSessions}"
+}
+
+while : ; do
+	if [ -n "${DISPLAY}" ] ; then
+		root="$(getNumberOfTmuxSessions)$(getDate)$(getBattery)$(getWattage)$(getCpuTemp)$(getVolume)$(getBrightness)$(getLayout)$(getWifi)$(getEth)$(getRates)$(getNord)$(getBluetooth)"
+		root="$(printf '%s' "${root}" | cut -c3-)"
+		xsetroot -name "${root}"
+	fi
+	sleep -- "${delay}"
+done &
