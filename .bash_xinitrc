@@ -113,6 +113,6 @@ export NVM_DIR="${HOME}"/.nvm
 
 nohup startlxde 2>/dev/null 1>&2 & disown
 while true ; do
-	dwm
+	dwm 2>>/home/tosuman/.xinit.log 1>&2
 	sleep 0.5
 done

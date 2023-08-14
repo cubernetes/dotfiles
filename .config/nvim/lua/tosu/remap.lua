@@ -32,9 +32,9 @@ end)
 -- vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 
 vim.keymap.set("n", "<leader>s", ":%s/\\<<C-r><C-w>\\>/<C-r><C-w>/gI<Left><Left><Left>")
-vim.keymap.set("n", "<leader>x", "<cmd>!chmod +x %<CR>")
+vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>")
 
-vim.keymap.set("n", "<leader>x", ":w<CR>:!cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g -O0 -o main *.c && ./main ; rm -f ./main<CR>")
+vim.keymap.set("n", "<leader>x", ":w<CR>:!cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main *.c && ./main ; rm -f ./main<CR>")
 
 vim.keymap.set("n", "<leader>c", "mz:s/\\(^\\s*\\)\\(.*$\\)/\\1\\/* \\2 *\\//g<CR>:noh<CR>`z")
 vim.keymap.set("n", "<leader>C", "mz:s/\\/\\* \\(.*\\) \\*\\//\\1/g<CR>:noh<CR>`z")
