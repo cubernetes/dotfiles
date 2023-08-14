@@ -69,6 +69,8 @@ export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}"/ssh-agent.socket
 # export SSH_ASKPASS='/usr/bin/sudo-askpass'
 # export SSH_ASKPASS_REQUIRE='prefer'
 export GIT_CONFIG_GLOBAL="${HOME}"/.gitconfig
+# shellcheck disable=SC2155
+export GPG_TTY="$(tty)"
 
 export USER42='tischmid'
 export EMAIL42='timo42@proton.me'

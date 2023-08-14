@@ -1,17 +1,28 @@
 [user]
 	name = tosu
 	email = timo42@proton.me
+	signingkey = C00746F2E0F36492!
 [init]
 	defaultBranch = main
+[color]
+	ui = true
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
+[merge]
+	conflictsstyle = diff3
+[core]
+	autocrlf = input
 [alias]
+	l = log
 	s = status
 	a = add
 	ci = commit
 	d = diff
+	tree = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%C(bold blue)<%an>%Creset' --abbrev-commit
 [gpg]
 	program = gpg
+[commit]
+	gpgsign = true
