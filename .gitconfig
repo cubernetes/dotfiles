@@ -1,6 +1,6 @@
 [user]
-	name = cubernetes
-	email = timo42@protonmail.com
+	name = tosu
+	email = timo42@proton.me
 [init]
 	defaultBranch = main
 [filter "lfs"]
@@ -12,3 +12,6 @@
 	s = status
 	a = add
 	ci = commit
+	d = diff
+[gpg]
+	program = gpg
