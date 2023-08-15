@@ -85,6 +85,7 @@ alias xpaste='xsel --clipboard --output'
 alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y dist-upgrade && sudo apt -y autoremove &&
                 sudo apt -y clean'
+# shellcheck disable=SC2032
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME}"/.config/nvim/lua/*'
 alias after='nvim "${HOME}"/.config/nvim/after/plugin'
@@ -145,9 +146,11 @@ function paruuu () {
 		&& [ ! "${ssid}" = "Hackme" ] \
 	&& : ; then
 		printf '\033[31m%s\033m\n' "You're connected to '${ssid}', do you want to continue?"
-		read X
+		# shellcheck disable=SC2162
+		read
 	else
 		clear
+		# shellcheck disable=SC2033
 		time (
 		printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
 			&& yes | sudo pacman -Sy archlinux-keyring \
@@ -375,9 +378,9 @@ alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . .
 alias check_for_tabs="clear && 2>/dev/null grep -r ' ' ../ | grep -v pre-rebase | grep -v sendemail | grep -v update.sample | grep -v fsmonitor | grep -v pre-push | grep -v commit-msg | grep -v pre-commit | grep -v push-to- | grep -v pre-receive | grep -v ChangeLog | grep -v '.git/config' | grep -v autogen | grep -v configure.ac | grep -v Makefile | grep -v debian | grep -v lxpolkit-listener | grep -v '.git' | grep -v desktop-files | grep -v autostart.vala | grep -v combobox | grep -v main.vala | grep -v vala | grep -v lxsession-default  | grep -v logout  | grep -v settings-daemon  | grep -v xdg-autostart | grep -v data/images | grep -v compile.sh | grep -v lxsession.xml | grep -v lxsession-utils"
 # alias lxsession-edit='cd /tmp/lxsession/lxsession-edit && ./compile.sh && 2>/dev/null ./lxsession-edit'
 function x () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main *.c && ./main "${@}"
+	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
 	rm -f ./main
 }
 function x2 () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main *.c && ./main "${@}"
+	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
 }
