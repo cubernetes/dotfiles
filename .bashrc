@@ -375,7 +375,6 @@ if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 
 
 alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . ./env/bin/activate && pip install --no-input opencv-python mediapipe && pip freeze > ./requirements.txt && printf '\''#!/usr/bin/env python3\n\nfrom typing import NoReturn\n\nimport mediapipe as mp\nimport cv2\n\n\ndef main() -> NoReturn:\n\tpass\n\nif __name__ == '\''"'\''"'\''__main__'\''"'\''"'\'':\n\tmain()\n'\'' 1>./main.py && chmod +x ./main.py && printf '\''__pycache__/\nenv/\n'\'' 1>.gitignore && git init && git add -A && git commit -m '\''Initial commit'\'' && git ls-files && echo Done'
-# alias lxsession-edit='cd /tmp/lxsession/lxsession-edit && ./compile.sh && 2>/dev/null ./lxsession-edit'
 function x () { 
 	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
 	rm -f ./main
