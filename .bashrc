@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#! /usr/bin/bash -
 # This file ought to be sourced, above line for syntax highlighting purposes.
 
 ######################## BASH RESET #############################
