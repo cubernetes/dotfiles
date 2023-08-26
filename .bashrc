@@ -36,9 +36,10 @@ COMMANDS_="${COMMANDS_} xset kbdrate return cut batcat id ed vi vim nvim nano"
 COMMANDS_="${COMMANDS_} skill norminette bat echo if then fi else function"
 COMMANDS_="${COMMANDS_} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 # shellcheck disable=SC2086
-2>/dev/null \unset -f -- ${COMMANDS_}
+2>/dev/null \unset -f -- ${COMMANDS_-} || true
 # shellcheck disable=SC2086
-2>/dev/null \unalias -- ${COMMANDS_}
+2>/dev/null \unalias -- ${COMMANDS_-} || true
+\builtin -- hash -r
 2>/dev/null \unset -- POSIXLY_CORRECT COMMANDS_
 ######################## BASH RESET END #############################
 
@@ -50,8 +51,8 @@ shopt -s checkwinsize
 shopt -s dotglob
 shopt -s extglob
 shopt -u histverify
-HISTSIZE=-1
-HISTFILESIZE=-1
+HISTSIZE='-1'
+HISTFILESIZE='-1'
 HISTFILE="${HOME}"/.bash_history
 HISTTIMEFORMAT=$'\033[m%F %T: '
 HISTCONTROL='ignoredups:erasedups:ignorespace'
