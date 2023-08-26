@@ -71,6 +71,7 @@ export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}"/ssh-agent.socket
 export GIT_CONFIG_GLOBAL="${HOME}"/.gitconfig
 # shellcheck disable=SC2155
 export GPG_TTY="$(tty)"
+export _JAVA_AWT_WM_NONREPARENTING='1'
 
 export USER42='tischmid'
 export EMAIL42='timo42@proton.me'
