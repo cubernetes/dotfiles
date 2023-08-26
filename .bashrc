@@ -44,6 +44,7 @@ COMMANDS_="${COMMANDS_} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 
 [ -z "${PS1}" ] && return
 set -o emacs
+tabs -4
 shopt -s histappend
 shopt -s checkwinsize
 shopt -s dotglob
@@ -71,6 +72,7 @@ elif 2>/dev/null 1>&2 command -v vi; then
     alias v='vi'
 fi
 
+alias gdb='gdb -q'
 alias v='nvim'
 alias vim='nvim'
 alias ..='cd ..'
@@ -171,7 +173,7 @@ function skill () {
 	if [ -n "${1}" ] ; then
 		# shellcheck disable=SC2046,SC2009
 		2>/dev/null sudo kill -9 \
-			$(ps aux | grep "${1}" | head -1 | awk '{print $2}')
+			-- $(ps auxww | grep "${1}" | grep -v grep | awk '{print $2}')
 	else
 		echo 'Please provide one argument'
 	fi
@@ -310,9 +312,9 @@ precmd() {
 		mins="$((sec_diff / 60))"
 		secs="$((sec_diff % 60))"
 		if [ "${mins}" = "0" ] ; then
-			TOOK_STRING="${TOOK_STRING}${secs}s"
+			TOOK_STRING="${TOOK_STRING-}${secs}s"
 		else
-			TOOK_STRING="${TOOK_STRING}${mins}m${secs}s"
+			TOOK_STRING="${TOOK_STRING-}${mins}m${secs}s"
 		fi
 	else
 		unset -v -- TOOK_STRING
@@ -342,7 +344,7 @@ _PS1_1="${_PS1_1}@${_PS1_HOST_CLR}"
 _PS1_1="${_PS1_1}\h\[\033[m\]"
 _PS1_1="${_PS1_1}${_PS1_SSH}${_PS1_TMUX} "
 _PS1_1="${_PS1_1}${_PS1_CWD_CLR}"
-_PS1_1="${_PS1_1}[\w]\${TOOK_STRING}"
+_PS1_1="${_PS1_1}[\w]\${TOOK_STRING-}"
 # shellcheck disable=SC2016
 _PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
 # shellcheck disable=SC2016
