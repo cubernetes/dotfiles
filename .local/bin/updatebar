@@ -18,8 +18,8 @@ getBattery() {
 	battery="$(level="$(printf '%s' "$(($(cat /sys/class/power_supply/BAT1/energy_now) * 100000 / $(cat /sys/class/power_supply/BAT1/energy_full)))" | sed "s/\(...\)$/.\1%/")$([ "$(cat /sys/class/power_supply/BAT1/status)" = "Charging" ] && printf '%s' "+" || printf '%s' "-")" ; printf '%s' "${level}" ; printf '%s' "$(date "+%a %d/%m/%Y %H:%M:%S"): ${level}" >> /home/tosuman/.logs/battery.log)"
 	int_battery="$(printf '%s' "${battery}" | sed 's/\..*//')"
 	if [ "${int_battery}" -lt 11 ] && [ -z "$(pgrep -f qutebrowser)" ] ; then
-		xdotool key "alt+m"
-		xdotool key "alt+7"
+		xdotool key "Super_L+m"
+		xdotool key "Super_L+7"
 		1>/dev/null 2>&1 qutebrowser "/home/tosuman/infopages/battery_low.html" &
 
 	fi
@@ -37,6 +37,12 @@ getLayout() {
 
 getWifi() {
 	wifi="$(iw dev wlan0 link | grep SSID | sed -e 's/[[:blank:]]*SSID: //' -e 's/[[:blank:]]*$//')"
+	[ -n "${wifi}" ] && wifi="${dlm}^c#bf616a^ ${wifi}^d^"
+	printf '%s' "${wifi}"
+}
+
+getWifi1() {
+	wifi="$(iw dev wlan1 link | grep SSID | sed -e 's/[[:blank:]]*SSID: //' -e 's/[[:blank:]]*$//')"
 	[ -n "${wifi}" ] && wifi="${dlm}^c#bf616a^ ${wifi}^d^"
 	printf '%s' "${wifi}"
 }

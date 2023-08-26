@@ -40,3 +40,9 @@ vim.opt.updatetime = 50
 vim.opt.colorcolumn = '80'
 
 vim.opt.paste = false
+
+vim.diagnostic.config({
+	virtual_text = false,
+	virtual_lines = false,
+	underline = false,
+})
