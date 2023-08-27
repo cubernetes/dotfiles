@@ -74,7 +74,7 @@ elif 2>/dev/null 1>&2 command -v vi; then
 fi
 
 alias gdb='gdb -q'
-alias objdump='objdump --disassembler-color=extended-color -D -Mintel'
+alias objdump='objdump --disassembler-color=extended-color -Mintel'
 alias v='nvim'
 alias vim='nvim'
 alias ..='cd ..'
