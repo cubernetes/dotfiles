@@ -74,12 +74,14 @@ elif 2>/dev/null 1>&2 command -v vi; then
 fi
 
 alias gdb='gdb -q'
+alias objdump='objdump --disassembler-color=extended-color -D -Mintel'
 alias v='nvim'
 alias vim='nvim'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias sudo='sudo '
+alias s='eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
 alias watch='watch '
 alias tmux='tmux -2'
 alias open='xdg-open'
@@ -106,7 +108,6 @@ alias tree='tree --dirsfirst -C'
 alias francinette='"${HOME-}"/francinette/tester.sh'
 alias paco='"${HOME-}"/francinette/tester.sh'
 alias wttr='curl wttr.in'
-alias s='sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
 alias colors='bash -c "$(curl --silent --location \
 "https://gist.githubusercontent.com/HaleTom/\
 89ffe32783f89f403bba96bd7bcd1263/raw"
@@ -152,20 +153,28 @@ function paruuu () {
 		# shellcheck disable=SC2162
 		read
 	else
-		clear
 		# shellcheck disable=SC2033
 		time (
-		printf "\033[30;41m%s\033[m\n" "pacman -Sy archlinux-keyring" \
-			&& yes | sudo pacman -Sy archlinux-keyring \
-			&& printf "\033[30;41m%s\033[m\n" "pacman -Syyuu --noconfirm" \
-			&& yes | sudo pacman -Syyuu --noconfirm \
-			&& printf "\033[30;41m%s\033[m\n" "paru -Syu --devel --noconfirm" \
-			&& yes | paru -Syu --devel --noconfirm \
-			&& printf "\033[30;41m%s\033[m\n" "pacman -Qtdq | pacman -Rns -" \
-			&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
-			|| printf "\033[30;42m%s\033[m\n" "No pacman orphan packages :)!"; } \
-		&& printf "\033[30;42m%s\033[m\n" "###### Done without error ######" \
-		|| printf "\033[30;41m%s\033[m\n" "###### Some error occured! ######"
+			printf '\033[30;41m%s\033[m\n' 'Cache credentials for sudo:' \
+				&& sudo -v \
+				&& printf '\033[30;41m%s\033[m\n' 'Updating mirrorlist' \
+				&& curl -sSL "https://archlinux.org/mirrorlist/?country=DE&protocol=https&use_mirror_status=on" \
+					| sed -e 's/^#Server/Server/' -e '/^#/d' \
+					| rankmirrors -n 8 - \
+					| sudo tee /etc/pacman.d/mirrorlist \
+				&& clear \
+				&& printf '\033[30;41m%s\033[m\n' 'pacman -Sy archlinux-keyring' \
+				&& yes | sudo pacman -Sy archlinux-keyring \
+				&& printf '\033[30;41m%s\033[m\n' 'pacman -Syyuu --noconfirm' \
+				&& yes | sudo pacman -Syyuu --noconfirm \
+				&& printf '\033[30;41m%s\033[m\n' 'paru -Syyu --devel --noconfirm' \
+				&& yes | paru -Syyu --devel --noconfirm \
+				&& printf '\033[30;41m%s\033[m\n' 'pacman -Qtdq | pacman -Rns -' \
+				&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
+				|| printf '\033[30;42m%s\033[m\n' 'No pacman orphan packages :)!'; } \
+				&& yes | paru -Scc -d \
+			&& printf '\n\033[30;42m%s\033[m\n' '###### Done without error ######' \
+			|| printf '\n\033[30;41m%s\033[m\n' '###### Some error occured! ######'
 		)
 	fi
 }
