@@ -89,7 +89,7 @@ alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
                 sudo apt -y dist-upgrade && sudo apt -y autoremove &&
                 sudo apt -y clean'
 # shellcheck disable=SC2032
-alias pacman='pacman --color=auto '
+alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
 alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
