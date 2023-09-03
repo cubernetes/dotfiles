@@ -195,8 +195,8 @@ function wpa_restart () {
 }
 
 function bat () {
-	2>/dev/null command -v batcat && { batcat "${@-}"; return 0; }
-	2>/dev/null command -v bat && { $(type -P bat) "${@-}"; return 0; }
+	2>/dev/null command -v batcat && { batcat "${@}"; return 0; }
+	2>/dev/null command -v bat && { $(type -P bat) "${@}"; return 0; }
 	{ printf '%s\n' "bat not found"; return 1; }
 }
 
@@ -216,7 +216,7 @@ function norminette () {
 		printf "%s\n%b\n" "Norminette v${vers-} instead of v${newst-} detected."\
                           '\033[31mPlease up-/downgrade\033[m'
 	fi
-	$(type -P norminette) -R CheckForbiddenSourceHeader "${@-}"
+	$(type -P norminette) -R CheckForbiddenSourceHeader "${@}"
 }
 
 function __norm () {
@@ -388,9 +388,9 @@ if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 
 alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . ./env/bin/activate && pip install --no-input opencv-python mediapipe && pip freeze > ./requirements.txt && printf '\''#!/usr/bin/env python3\n\nfrom typing import NoReturn\n\nimport mediapipe as mp\nimport cv2\n\n\ndef main() -> NoReturn:\n\tpass\n\nif __name__ == '\''"'\''"'\''__main__'\''"'\''"'\'':\n\tmain()\n'\'' 1>./main.py && chmod +x ./main.py && printf '\''__pycache__/\nenv/\n'\'' 1>.gitignore && git init && git add -A && git commit -m '\''Initial commit'\'' && git ls-files && echo Done'
 function x () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@-}"
+	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
 	rm -f ./main
 }
 function x2 () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@-}"
+	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
 }
