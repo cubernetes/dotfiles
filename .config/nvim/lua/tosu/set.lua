@@ -22,7 +22,7 @@ vim.opt.backup = false
 vim.opt.undodir = os.getenv('HOME') .. '/.vim/undodir'
 vim.opt.undofile = true
 
-vim.opt.hlsearch = true
+vim.opt.hlsearch = false
 vim.opt.incsearch = true
 
 vim.opt.termguicolors = true
@@ -41,8 +41,9 @@ vim.opt.colorcolumn = '80'
 
 vim.opt.paste = false
 
-vim.diagnostic.config({
-	virtual_text = false,
-	virtual_lines = false,
-	underline = false,
-})
+-- vim.diagnostic.config({
+-- 	virtual_lines = false,
+-- 	virtual_text = false,
+-- 	underline = false,
+-- 	signs = true,
+-- })

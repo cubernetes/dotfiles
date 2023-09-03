@@ -26,6 +26,7 @@ return require('packer').startup(function(use)
 	use('vim-airline/vim-airline-themes')
 	use('cacharle/c_formatter_42.vim')
 	-- use('m4xshen/autoclose.nvim')
+	use('takac/vim-hardtime')
 	use({
 		'VonHeikemen/lsp-zero.nvim',
 		branch = 'v2.x',
