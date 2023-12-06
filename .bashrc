@@ -48,16 +48,17 @@ set -o emacs
 tabs -4
 shopt -s histappend
 shopt -s checkwinsize
-shopt -s dotglob
 shopt -s extglob
 shopt -u histverify
+shopt -s autocd
 HISTSIZE='-1'
 HISTFILESIZE='-1'
 HISTFILE="${HOME}"/.bash_history
 HISTTIMEFORMAT=$'\033[m%F %T: '
-HISTCONTROL='ignoredups:erasedups:ignorespace'
+HISTCONTROL='ignoreboth:erasedups'
 # PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
 
 if 2>/dev/null 1>&2 command -v nvim; then
     alias v='nvim'
@@ -81,7 +82,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias sudo='sudo '
-alias s='eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
+alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-); eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
 alias watch='watch '
 alias tmux='tmux -2'
 alias open='xdg-open'
@@ -98,7 +99,8 @@ alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --ti
 # alias l='lsd --timesort --color=auto -harZ1l'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias ls='\ls --width="${COLUMNS:-80}" --color=auto -bC'
-alias ip='ip --color=auto'
+alias ip='ip -color=auto'
+alias ipa='ip -br -color=auto a'
 alias grep='grep --color=auto'
 alias diff='diff --width="${COLUMNS:-80}" --color=auto'
 alias less='less -SR'
@@ -124,9 +126,27 @@ alias norm2='alacritty -e sh -c '\''watch -cn.5 \
             norminette -R CheckForbiddenSourceHeader \| \
             xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
 alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
+alias r='ranger'
 2>/dev/null dotconf config status.showUntrackedFiles no
 
+# auto_pushd
+function cd () {
+	command cd "${@}" || return 1
+	pwd="${PWD}"
+	1>/dev/null command cd - || return 1
+	1>/dev/null pushd "${pwd}" || return 1
+}
+CDPATH="${CDPATH}:${HOME}/projects"
+CDPATH="${CDPATH}:${HOME}/projects/aoc"
+CDPATH="${CDPATH}:${HOME}/projects/aoc/2023"
+CDPATH="${CDPATH}:${HOME}/42ecole"
+CDPATH="${CDPATH}:${HOME}/42ecole/42cursus"
+
 function paruuu () {
+	read -p 'Do system upgrade (Y) or exit (n)' choice
+	if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
+		exit
+	fi
 	ssid="$(iw dev wlan0 link |
 			grep SSID |
 			sed -e 's/[[:blank:]]*SSID: //' \
@@ -147,11 +167,14 @@ function paruuu () {
 		&& [ ! "${ssid-}" = "42Berlin_Student" ] \
 		&& [ ! "${ssid-}" = "42Berlin_Guest" ] \
 		&& [ ! "${ssid-}" = "ZorgatiHome Guest" ] \
+		&& [ ! "${ssid-}" = "Rudolph" ] \
 		&& [ ! "${ssid-}" = "Hackme" ] \
+		&& [ ! "${ssid-}" = "hackme3" ] \
+		&& [ ! "${ssid-}" = "Silmaril 4 (5)" ] \
+		&& [ ! "${ssid-}" = "Silmaril 4 (2.4)" ] \
+		&& [ -n "${ssid-}" ] \
 	&& : ; then
-		printf '\033[31m%s\033m\n' "You're connected to '${ssid-}', do you want to continue?"
-		# shellcheck disable=SC2162
-		read
+		printf '\033[31m%s\033m\n' "You're connected to '${ssid-}', not updating?"
 	else
 		# shellcheck disable=SC2033
 		time (
@@ -222,8 +245,9 @@ function norminette () {
 function __norm () {
 	local _pwd
 
+	return 0
 	_pwd="$(pwd -P)"
-	[ -n "${_pwd-}" ] && [ -z "${_pwd##"${HOME-}"/42/42cursus/*}" ] || { return 1; }
+	[ -n "${_pwd-}" ] && [ -z "${_pwd##${HOME-}/42/42cursus/*}" ] || { return 1; }
 	1>/dev/null 2>&1 git status || { return 2; }
     1>/dev/null 2>&1 norminette && printf ' \033[92m%s\033[m' "[Norm: OK]" || printf ' \033[101;37m%s\033[m' "[䝝誒 ‼ NORM ‼ 屌誒]"
     return 0
@@ -280,13 +304,15 @@ if [ ! "${TERM-}" = "linux" ] ; then
 		export TERM='screen'
 	fi
 fi
-# shellcheck disable=SC2155
-export VISUAL="$(2>/dev/null command -v nvim)"
-# shellcheck disable=SC2155
-export EDITOR="$(2>/dev/null command -v vim  ||
-                 2>/dev/null command -v vi   ||
-                 2>/dev/null command -v nano ||
-                 2>/dev/null command -v ed)"
+# # shellcheck disable=SC2155
+# export VISUAL="$(2>/dev/null $(type -P nvim))"
+export VISUAL="vi"
+# # shellcheck disable=SC2155
+export EDITOR="vi"
+# export EDITOR="$(2>/dev/null $(type -P vim)  ||
+#                  2>/dev/null $(type -P vi)   ||
+#                  2>/dev/null $(type -P nano) ||
+#                  2>/dev/null $(type -P ed))"
 export SUDO_EDITOR="${EDITOR-}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
 export MANPAGER='nvim +Man!'
@@ -294,7 +320,7 @@ export MANPAGER='nvim +Man!'
 
 
 ###################### PROMPT STUFF #######################
-# If bash runs in posix mode, if should be `cut -c2-` instead
+# If bash runs in posix mode, if should be `cut -c2-' instead
 # shellcheck disable=SC2016
 PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
@@ -385,12 +411,101 @@ if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
 # unset PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
 
-
-alias new_mp_project='clear && builtin cd -P ./ && python3 -m venv ./env/ && . ./env/bin/activate && pip install --no-input opencv-python mediapipe && pip freeze > ./requirements.txt && printf '\''#!/usr/bin/env python3\n\nfrom typing import NoReturn\n\nimport mediapipe as mp\nimport cv2\n\n\ndef main() -> NoReturn:\n\tpass\n\nif __name__ == '\''"'\''"'\''__main__'\''"'\''"'\'':\n\tmain()\n'\'' 1>./main.py && chmod +x ./main.py && printf '\''__pycache__/\nenv/\n'\'' 1>.gitignore && git init && git add -A && git commit -m '\''Initial commit'\'' && git ls-files && echo Done'
-function x () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
-	rm -f ./main
+push_swap_perf () {
+	url="${1}"
+	perf_dir="${2}"
+	[ -z "${url}" ] && { echo "Expected two parameters (url && perf_dir)" ; return ; }
+	[ -z "${perf_dir}" ] && { echo "Expected two parameters (url && perf_dir)" ; return ; }
+	rm -rf -- "${perf_dir}" || { echo "Couldn't return" ; return ; }
+	git clone --quiet --depth 1 "${url}" "${perf_dir}" || { echo "Couldn't clone" ; return ; }
+	[ -f "./stack_a.txt" ] || { echo "File ./stack_a.txt does not exist!" ; return ; }
+	stack_a_file="$(readlink -f -- "./stack_a.txt")"
+	2>/dev/null 1>/dev/null pushd -- "${perf_dir}" || { echo "Couldn't cd into '${perf_dir}'" ; return ; }
+	makefile_dir="$(find . -name Makefile | awk '{printf "%s|%s\n", $0, length($0)}' | sort -t'|' -k2,2g | head -1 | awk -F'|' '{print $1}' | xargs -r dirname)"
+	[ -z "${makefile_dir}" ] && { echo "No Makefile found" ; return ; }
+	2>/dev/null 1>/dev/null pushd -- "${makefile_dir}" || { echo "Couldn't cd into '${makefile_dir}'" ; return ; }
+	find . -type f -exec sed -i -e 's/-Werror//g' {} \;
+	find . -type f -exec sed -i -e 's/rewind/rewindx/g' {} \;
+	2>/dev/null 1>/dev/null make -j$(nproc) -i -k -s || { echo "Couldn't run make" ; return ; }
+	ops="$(2>/dev/null ./push_swap $(cat -- "${stack_a_file}") | wc -l)"
+	echo "ops;${ops}"
+	2>/dev/null 1>/dev/null popd
+	2>/dev/null 1>/dev/null popd
 }
-function x2 () { 
-	cc -std=c89 -Wall -Wextra -pedantic -Werror -Wconversion -g3 -O0 -o main ./*.c && ./main "${@}"
+
+# Add these to your ~/.bash_aliases
+
+AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
+
+alias aos="python3 solution.py < in.txt"
+alias aot="printf '\033[34m'; python3 solution.py < test.txt; printf '\033[m'"
+alias aoc="aot; echo; aos"
+
+aocload () {
+	local dir
+	local year
+	local day
+
+	this_year="$(date "+%Y")"
+	this_day="$(date "+%d" | sed -e 's/^0//')"
+    if [ -n "${1}" ]; then
+		if [ -z "${2}" ]; then
+			printf '\033[31m%s\033[m\n' 'Expected one more parameter (day)'
+			return 1
+		fi
+		if [ -n "${3}" ]; then
+			printf '\033[31m%s\033[m\n' 'Expected exactly 2 parameters (year day)'
+			return 2
+		fi
+		year="${1}"
+		day="${2}"
+		if [ "${day}" -lt "1" -o "${day}" -gt "25" ]; then
+			printf '\033[31m%s\033[m\n' 'Day not in range 1..25'
+			return 3
+		fi
+		if [ "${year}" -lt "2015" -o "${year}" -gt "${this_year}" ]; then
+			printf '\033[31m%s\033[m\n' "Year not in range 2015..${this_year}"
+			return 4
+		fi
+    else
+		year="${this_year}"
+		day="${this_day}"
+    fi
+	dir="${AOC_DIR}/${year}/${day}"
+
+	command mkdir -p -- "${dir}" || return 5
+	command cd -P -- "${dir}" || return 6
+	2>/dev/null 1>/dev/null git init "${AOC_DIR}" || true
+
+	. "${AOC_DIR}/.env"
+	curl -sSL \
+		-o './in.txt' \
+		-b "session=${AOC_COOKIE}" \
+		"https://adventofcode.com/${year}/day/${day}/input" \
+		|| printf '\033[31m%s\033[m' "$(echo 'Error downloading input' | tee './in.txt')"
+	command unset -v -- AOC_COOKIE
+
+	if [ ! -f './solution.py' ]; then
+		command cat <<- TEMPLATE >> './solution.py'
+			#!/usr/bin/env python3
+
+			import re
+			import sys
+			from functools import lru_cache
+			from collections import deque, defaultdict
+
+
+			data = open(0).read().strip()
+			lines = data.splitlines()
+
+			for line in lines:
+				line = line
+		TEMPLATE
+	fi
+
+	command chmod +x './solution.py'
+	tmux splitw -v -c "${dir}"
+	tmux send-keys "nvim '+normal gg0' './in.txt'" ENTER
+	tmux select-pane -l
+	tmux send-keys "nvim './solution.py'" ENTER
 }
