@@ -8,6 +8,7 @@ end
 
 -- For inside
 ColorMyPencils("gruvbox")
+-- ColorMyPencils("habamax")
 
 -- For outside
--- ColorMyPencils("shine")
+-- ColorMyPencils("peachpuff")
