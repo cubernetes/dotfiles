@@ -1,18 +1,26 @@
 #!/bin/sh
 
-export PATH="${PATH}:/home/tosuman/.local/bin"
-export SHELL='/usr/bin/bash'
+run () {
+	if [ "$(date "+%H")" = "06" ] ; then
+		return 1
+	fi
+	sleep 10
+	export PATH="${PATH}:/home/tosuman/.local/bin"
+	export SHELL='/usr/bin/bash'
 
-number_of_tmux_sessions="$(tmux ls | wc -l)"
+	number_of_tmux_sessions="$(tmux ls | wc -l)"
 
-if [ "${number_of_tmux_sessions}" = "0" ] ; then
-	DISPLAY=:0 alacritty & disown
-	DISPLAY=:1 alacritty & disown
-	DISPLAY=:2 alacritty & disown
-	sleep 1
-else
-	tmux new-window -c '/home/tosuman' &&
-	tmux rename-window 'System Update'
-fi
+	if [ "${number_of_tmux_sessions}" = "0" ] ; then
+		DISPLAY=:0 alacritty & disown
+		DISPLAY=:1 alacritty & disown
+		DISPLAY=:2 alacritty & disown
+		sleep 1
+	else
+		tmux new-window -c '/home/tosuman' &&
+		tmux rename-window 'System Update'
+	fi
 
-tmux send-key 'paruuu' ENTER
+	tmux send-key 'paruuu' ENTER
+}
+
+run

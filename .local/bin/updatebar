@@ -74,8 +74,8 @@ getVolume() {
 }
 
 getRates() {
-	rxtxrates="$( (cat "${HOME}"/.datarates ; grep wlan0 /proc/net/dev) | awk '{if(l1){printf "%.3f ↑ %.3f ↓\n", ($2-l1)/1024^2*8, ($10-l2)/1024^2*8} else{l1=$2; l2=$10;}}' )"
-	grep wlan0 /proc/net/dev > "${HOME}/.datarates"
+	rxtxrates="$( (cat /tmp/.datarates ; grep wlan0 /proc/net/dev) | awk '{if(l1){printf "%.3f ↑ %.3f ↓\n", ($2-l1)/1024^2*8, ($10-l2)/1024^2*8} else{l1=$2; l2=$10;}}' )"
+	grep wlan0 /proc/net/dev > /tmp/.datarates
 	[ -n "${rxtxrates}" ] && rxtxrates="${dlm}^c#92ee791^${rxtxrates}^d^"
 	printf '%s' "${rxtxrates}"
 }
