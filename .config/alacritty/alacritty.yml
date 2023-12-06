@@ -152,6 +152,34 @@ colors:
     cyan:    '#46d9ff'
     white:   '#dfdfdf'
 
+#colors:
+#  # Default colors
+#  primary:
+#    background: '#f2eede'
+#    foreground: '#000000'
+#
+#  # normal colors
+#  normal:
+#    black:   '#000000'
+#    red:     '#cc3e28'
+#    green:   '#216609'
+#    yellow:  '#b58900'
+#    blue:    '#1e6fcc'
+#    magenta: '#5c21a5'
+#    cyan:    '#158c86'
+#    white:   '#aaaaaa'
+#
+#  # bright colors
+#  bright:
+#    black:   '#555555'
+#    red:     '#cc3e28'
+#    green:   '#216609'
+#    yellow:  '#b58900'
+#    blue:    '#1e6fcc'
+#    magenta: '#5c21a5'
+#    cyan:    '#158c86'
+#    white:   '#aaaaaa'
+
 # Visual Bell
 #
 # Any time the BEL code is received, Alacritty "rings" the visual bell. Once
