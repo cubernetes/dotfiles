@@ -40,6 +40,7 @@ vim.opt.updatetime = 50
 vim.opt.colorcolumn = '80'
 
 vim.opt.paste = false
+vim.opt.splitright = false
 
 -- vim.diagnostic.config({
 -- 	virtual_lines = false,
