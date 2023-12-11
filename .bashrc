@@ -95,7 +95,7 @@ alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
 alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
-alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
+alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --time-style=long-iso -bharZ1l'
 # alias l='lsd --timesort --color=auto -harZ1l'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias ls='\ls --width="${COLUMNS:-80}" --color=auto -bC'
@@ -174,37 +174,42 @@ function paruuu () {
 		&& [ ! "${ssid-}" = "Silmaril 4 (2.4)" ] \
 		&& [ -n "${ssid-}" ] \
 	&& : ; then
-		printf '\033[31m%s\033m\n' "You're connected to '${ssid-}', not updating?"
-	else
-		# shellcheck disable=SC2033
-		time (
-			printf '\033[30;41m%s\033[m\n' 'Cache credentials for sudo:' \
-				&& sudo -v \
-				&& printf '\033[30;41m%s\033[m\n' 'Updating mirrorlist' \
-				&& curl -sSL "https://archlinux.org/mirrorlist/?country=DE&protocol=https&use_mirror_status=on" \
-					| sed -e 's/^#Server/Server/' -e '/^#/d' \
-					| rankmirrors -n 8 - \
-					| sudo tee /etc/pacman.d/mirrorlist \
-				&& clear \
-				&& printf '\033[30;41m%s\033[m\n' 'pacman -Sy archlinux-keyring' \
-				&& yes | sudo pacman -Sy archlinux-keyring \
-				&& printf '\033[30;41m%s\033[m\n' 'pacman -Syyuu --noconfirm' \
-				&& yes | sudo pacman -Syyuu --noconfirm \
-				&& printf '\033[30;41m%s\033[m\n' 'paru -Syyu --devel --noconfirm' \
-				&& yes | paru -Syyu --devel --noconfirm \
-				&& printf '\033[30;41m%s\033[m\n' 'pacman -Qtdq | pacman -Rns -' \
-				&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
-				|| printf '\033[30;42m%s\033[m\n' 'No pacman orphan packages :)!'; } \
-				&& yes | paru -Scc -d \
-			&& printf '\n\033[30;42m%s\033[m\n' '###### Done without error ######' \
-			|| printf '\n\033[30;41m%s\033[m\n' '###### Some error occured! ######'
-		)
+		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
+		if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
+			exit
+		fi
 	fi
+	# shellcheck disable=SC2033
+	time (
+		printf '\033[30;41m%s\033[m\n' 'Cache credentials for sudo:' \
+			&& sudo -v \
+			&& printf '\033[30;41m%s\033[m\n' 'Updating mirrorlist' \
+			&& curl -sSL "https://archlinux.org/mirrorlist/?country=DE&protocol=https&use_mirror_status=on" \
+				| sed -e 's/^#Server/Server/' -e '/^#/d' \
+				| rankmirrors -n 8 - \
+				| sudo tee /etc/pacman.d/mirrorlist \
+			&& clear \
+			&& printf '\033[30;41m%s\033[m\n' 'pacman -Sy archlinux-keyring' \
+			&& yes | sudo pacman -Sy archlinux-keyring \
+			&& printf '\033[30;41m%s\033[m\n' 'pacman -Syyuu --noconfirm' \
+			&& yes | sudo pacman -Syyuu --noconfirm \
+			&& printf '\033[30;41m%s\033[m\n' 'paru -Syyu --devel --noconfirm' \
+			&& yes | paru -Syyu --devel --noconfirm \
+			&& printf '\033[30;41m%s\033[m\n' 'pacman -Qtdq | pacman -Rns -' \
+			&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns - \
+			|| printf '\033[30;42m%s\033[m\n' 'No pacman orphan packages :)!'; } \
+			&& yes | paru -Scc -d \
+		&& printf '\n\033[30;42m%s\033[m\n' '###### Done without error ######' \
+		|| printf '\n\033[30;41m%s\033[m\n' '###### Some error occured! ######'
+	)
 }
 
 function skill () {
 	if [ -n "${1-}" ] ; then
 		# shellcheck disable=SC2046,SC2009
+		2>/dev/null kill -9 \
+			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}') \
+			&& return 0
 		2>/dev/null sudo kill -9 \
 			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}')
 	else
@@ -491,15 +496,27 @@ aocload () {
 
 			import re
 			import sys
-			from functools import lru_cache
-			from collections import deque, defaultdict
+			import math
+			import numpy as np
+			from functools import cache, lru_cache, reduce
+			from itertools import (
+			    repeat, cycle, combinations, combinations_with_replacement,
+			    permutations, tee, pairwise, zip_longest, islice, takewhile,
+			    filterfalse, starmap
+			)
+			from collections import deque, defaultdict, Counter
+			e=enumerate
+			def pairs(iterable, filler=None):
+				a, b = tee(iterable)
+				next(b, None)
+				return islice(zip(a, b), None, None, 2))
 
 
 			data = open(0).read().strip()
 			lines = data.splitlines()
 
 			for line in lines:
-				line = line
+				line = line.split()
 		TEMPLATE
 	fi
 
