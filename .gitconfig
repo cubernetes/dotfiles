@@ -15,6 +15,7 @@
 	conflictsstyle = diff3
 [core]
 	autocrlf = input
+	editor = nvim
 [alias]
 	l = log
 	s = status

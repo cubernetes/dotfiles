@@ -48,3 +48,6 @@ vim.keymap.set("n", "<leader>c", "mz:s/\\(^\\s*\\)\\(.*$\\)/\\1\\/* \\2 *\\//g<C
 vim.keymap.set("n", "<leader>C", "mz:s/\\/\\* \\(.*\\) \\*\\//\\1/g<CR>:noh<CR>`z")
 vim.keymap.set("v", "<leader>c", "mz:s/\\(^\\s*\\)\\(.*$\\)/\\1\\/* \\2 *\\//g<CR>:noh<CR>`z")
 vim.keymap.set("v", "<leader>C", "mz:s/\\/\\* \\(.*\\) \\*\\//\\1/g<CR>:noh<CR>`z")
+
+vim.fn.setreg("t", "m5`1v`2y`3v`4p`1v`2p`5")
+vim.keymap.set("n", "<C-t>", "m3yiwi<CR> <C-w><ESC>m2`1bviwp`2viwp`2i<BS><ESC>`3")

@@ -95,7 +95,7 @@ alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
 alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
-alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --time-style=long-iso -bharZ1l'
+alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
 # alias l='lsd --timesort --color=auto -harZ1l'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias ls='\ls --width="${COLUMNS:-80}" --color=auto -bC'
@@ -136,6 +136,8 @@ function cd () {
 	1>/dev/null command cd - || return 1
 	1>/dev/null pushd "${pwd}" || return 1
 }
+
+CDPATH="${CDPATH}:${HOME}"
 CDPATH="${CDPATH}:${HOME}/projects"
 CDPATH="${CDPATH}:${HOME}/projects/aoc"
 CDPATH="${CDPATH}:${HOME}/projects/aoc/2023"
@@ -239,7 +241,7 @@ function norminette () {
 	local newst
 
 	vers="$($(type -P norminette) -v | cut -d" " -f2)"
-	newst='3.3.53'
+	newst='3.3.55'
 	if [ ! "${vers-}" = "${newst-}" ] ; then
 		printf "%s\n%b\n" "Norminette v${vers-} instead of v${newst-} detected."\
                           '\033[31mPlease up-/downgrade\033[m'
@@ -494,29 +496,47 @@ aocload () {
 		command cat <<- TEMPLATE >> './solution.py'
 			#!/usr/bin/env python3
 
+			print()
+
+			import os
 			import re
 			import sys
 			import math
+			import multiprocessing as mp
+			from copy import copy, deepcopy
+			from typing import Any
 			import numpy as np
+			import more_itertools as miter
 			from functools import cache, lru_cache, reduce
+			from collections import deque, defaultdict, Counter
 			from itertools import (
 			    repeat, cycle, combinations, combinations_with_replacement,
 			    permutations, tee, pairwise, zip_longest, islice, takewhile,
 			    filterfalse, starmap
 			)
-			from collections import deque, defaultdict, Counter
 			e=enumerate
-			def pairs(iterable, filler=None):
-				a, b = tee(iterable)
-				next(b, None)
-				return islice(zip(a, b), None, None, 2))
 
+			data = open(0).read().strip().splitlines()
+			R = len(data)
+			C = len(data[0])
+			def parse_grid(data: list[str]) -> Any:
+			    for r in range(R):
+			        for c in range(C):
+			            pass
+			def parse_lines(data: list[str]) -> Any:
+			    for line in data:
+			        line = line.split()
+			def parse_line(data: list[str]) -> Any:
+			    return data[0].split()
+			# data = parse_line(data)
+			# data = parse_lines(data)
+			data = parse_grid(data)
 
-			data = open(0).read().strip()
-			lines = data.splitlines()
-
-			for line in lines:
-				line = line.split()
+			t = 0
+			for line in data:
+			    n = 0
+			    t += n
+			print(t)
 		TEMPLATE
 	fi
 
