@@ -32,6 +32,8 @@ yellow = "#da8548"
 [colors.primary]
 background = "#282c34"
 foreground = "#bbc2cf"
+# foreground = "#000000"
+# background = "#ffffff"
 
 [colors.selection]
 background = "#3e4451"
@@ -398,12 +400,13 @@ program = "/bin/sh"
 
 [window]
 dynamic_padding = false
+dynamic_title = true
 opacity = 1.0
 startup_mode = "Windowed"
 
 [window.dimensions]
-columns = 100
-lines = 85
+columns = 90
+lines = 25
 
 [window.padding]
 x = 0

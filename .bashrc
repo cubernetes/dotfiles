@@ -74,6 +74,9 @@ elif 2>/dev/null 1>&2 command -v vi; then
     alias v='vi'
 fi
 
+alias tapo_bright='ssh -t pt bash -ic tapo_bright'
+alias tapo_color_ambience='ssh -t pt bash -ic tapo_color_ambience'
+alias tapo_color_ambience2='ssh -t pt bash -ic tapo_color_ambience2'
 alias gdb='gdb -q'
 alias objdump='objdump --disassembler-color=extended-color -Mintel'
 alias v='nvim'
@@ -143,6 +146,7 @@ CDPATH="${CDPATH}:${HOME}/projects/aoc"
 CDPATH="${CDPATH}:${HOME}/projects/aoc/2023"
 CDPATH="${CDPATH}:${HOME}/42ecole"
 CDPATH="${CDPATH}:${HOME}/42ecole/42cursus"
+CDPATH="${CDPATH}:${HOME}/onnea"
 
 function paruuu () {
 	read -p 'Do system upgrade (Y) or exit (n)' choice
@@ -176,7 +180,7 @@ function paruuu () {
 		&& [ ! "${ssid-}" = "Silmaril 4 (2.4)" ] \
 		&& [ -n "${ssid-}" ] \
 	&& : ; then
-		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
+		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
 		if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
 			exit
 		fi
@@ -329,7 +333,7 @@ export MANPAGER='nvim +Man!'
 ###################### PROMPT STUFF #######################
 # If bash runs in posix mode, if should be `cut -c2-' instead
 # shellcheck disable=SC2016
-PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
+# PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
 if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
 	curl --silent --location \
@@ -546,3 +550,6 @@ aocload () {
 	tmux select-pane -l
 	tmux send-keys "nvim './solution.py'" ENTER
 }
+
+xmodmap ~/.Xmodmap
+alias q='docker run --rm -it ghcr.io/natesales/q'

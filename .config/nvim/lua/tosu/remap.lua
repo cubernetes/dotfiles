@@ -51,3 +51,6 @@ vim.keymap.set("v", "<leader>C", "mz:s/\\/\\* \\(.*\\) \\*\\//\\1/g<CR>:noh<CR>`
 
 vim.fn.setreg("t", "m5`1v`2y`3v`4p`1v`2p`5")
 vim.keymap.set("n", "<C-t>", "m3yiwi<CR> <C-w><ESC>m2`1bviwp`2viwp`2i<BS><ESC>`3")
+
+-- vim.keymap.set("i", "{<CR>", "<CR>{<CR>}<ESC>O")
+vim.keymap.set("n", "*", "#*")

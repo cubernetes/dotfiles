@@ -8,3 +8,7 @@ set page-completions off
 
 TAB: menu-complete
 "\e[Z": menu-complete-backward
+
+# "\e[A": history-substring-search-backward
+# "\e[B": history-substring-search-forward
+"\C-x\C-r": forward-search-history

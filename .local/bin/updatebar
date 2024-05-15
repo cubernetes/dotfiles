@@ -6,16 +6,26 @@ done
 
 dlm=" | "
 delay=1
+whitemode='0'
+
+getColor() {
+	if [ "${whitemode}" = "1" ]; then
+		printf '%s' "000000" # black
+	else
+		printf '%s' "${1}"
+	fi
+}
 
 getDate() {
 	date="$(date +"%a %d/%m/%Y %H:%M:%S")"
-	# [ -n "${date}" ] && date="${dlm}^c#d08770^  ${date}^d^"
-	[ -n "${date}" ] && date="${dlm}^c#d08770^📅 ${date}^d^"
+	fontColor="$(getColor 'd08770')"
+	# [ -n "${date}" ] && date="${dlm}^c#${fontColor}^  ${date}^d^"
+	[ -n "${date}" ] && date="${dlm}^c#${fontColor}^📅 ${date}^d^"
 	printf '%s' "${date}"
 }
 
 getBattery() {
-	battery="$(level="$(printf '%s' "$(($(cat /sys/class/power_supply/BAT1/energy_now) * 100000 / $(cat /sys/class/power_supply/BAT1/energy_full)))" | sed "s/\(...\)$/.\1%/")$([ "$(cat /sys/class/power_supply/BAT1/status)" = "Charging" ] && printf '%s' "+" || printf '%s' "-")" ; printf '%s' "${level}" ; printf '%s' "$(date "+%a %d/%m/%Y %H:%M:%S"): ${level}" >> /home/tosuman/.logs/battery.log)"
+	battery="$(level="$(printf '%s' "$(($(cat /sys/class/power_supply/BAT1/energy_now) * 100000 / $(cat /sys/class/power_supply/BAT1/energy_full)))" | sed "s/\(...\)$/.\1%/")$([ "$(cat /sys/class/power_supply/BAT1/status)" = "Charging" ] && printf '%s' "+" || printf '%s' "-")" ; printf '%s' "${level}" ; printf '%s\n' "$(date "+%a %d/%m/%Y %H:%M:%S"): ${level}" >> /home/tosuman/.logs/battery.log)"
 	int_battery="$(printf '%s' "${battery}" | sed 's/\..*//')"
 	if [ "${int_battery}" -lt 11 ] && [ -z "$(pgrep -f qutebrowser)" ] ; then
 		xdotool key "Super_L+m"
@@ -23,85 +33,98 @@ getBattery() {
 		1>/dev/null 2>&1 qutebrowser "/home/tosuman/infopages/battery_low.html" &
 
 	fi
-	# [ -n "${battery}" ] && battery="${dlm}^c#43f1f1^ ${battery}^d^"
-	[ -n "${battery}" ] && battery="${dlm}^c#43f1f1^🔋 ${battery}^d^"
+	fontColor="$(getColor '43f1f1')"
+	# [ -n "${battery}" ] && battery="${dlm}^c#${fontColor}^ ${battery}^d^"
+	[ -n "${battery}" ] && battery="${dlm}^c#${fontColor}^🔋 ${battery}^d^"
 	printf '%s' "${battery}"
 }
 
 getLayout() {
 	layout="$(setxkbmap -query | grep layout | awk -F' ' '{ print $2 }')"
-	# [ -n "${layout}" ] && layout="${dlm}^c#a3be8c^ ${layout}^d^"
-	[ -n "${layout}" ] && layout="${dlm}^c#a3be8c^💻 ${layout}^d^"
+	fontColor="$(getColor 'a3be8c')"
+	# [ -n "${layout}" ] && layout="${dlm}^c#${fontColor}^ ${layout}^d^"
+	[ -n "${layout}" ] && layout="${dlm}^c#${fontColor}^💻 ${layout}^d^"
 	printf '%s' "${layout}"
 }
 
 getWifi() {
 	wifi="$(iw dev wlan0 link | grep SSID | sed -e 's/[[:blank:]]*SSID: //' -e 's/[[:blank:]]*$//')"
-	[ -n "${wifi}" ] && wifi="${dlm}^c#bf616a^ ${wifi}^d^"
+	fontColor="$(getColor 'bf616a')"
+	[ -n "${wifi}" ] && wifi="${dlm}^c#${fontColor}^ ${wifi}^d^"
 	printf '%s' "${wifi}"
 }
 
 getWifi1() {
 	wifi="$(iw dev wlan1 link | grep SSID | sed -e 's/[[:blank:]]*SSID: //' -e 's/[[:blank:]]*$//')"
-	[ -n "${wifi}" ] && wifi="${dlm}^c#bf616a^ ${wifi}^d^"
+	fontColor="$(getColor 'bf616a')"
+	[ -n "${wifi}" ] && wifi="${dlm}^c#${fontColor}^ ${wifi}^d^"
 	printf '%s' "${wifi}"
 }
 
 getEth () {
 	eth="$(2>/dev/null ip a show "$(ls /sys/class/net | grep enp | head -1)" | grep -v inet6 | grep inet | awk '{print $2}')"
-	[ -n "${eth}" ] && eth="${dlm}^c#bf616a^ ${eth}^d^"
+	fontColor="$(getColor 'bf616a')"
+	[ -n "${eth}" ] && eth="${dlm}^c#${fontColor}^ ${eth}^d^"
 	printf '%s' "${eth}"
 }
 
 getNord() {
 	# return 1
 	nord="$(nordvpn status | grep Status | sed 's/.*Status: //')"
-	# [ -n "${nord}" ] && nord="${dlm}^c#8fbcbb^嬨 ${nord}^d^"
-	[ -n "${nord}" ] && nord="${dlm}^c#8fbcbb^🌐 ${nord}^d^"
+	fontColor="$(getColor '8fbcbb')"
+	# [ -n "${nord}" ] && nord="${dlm}^c#${fontColor}^嬨 ${nord}^d^"
+	[ -n "${nord}" ] && nord="${dlm}^c#${fontColor}^🌐 ${nord}^d^"
 	printf '%s' "${nord}"
 }
 
 getBluetooth() {
 	bluetooth="$(bluetoothctl devices | cut -f2 -d' ' | while read -r uuid ; do bluetoothctl info "${uuid}" ; done | grep -e "Connected\|Name" | sed -e "s/\t//" - | perl -0777 -pe 's/Name: (.*?)\nConnected: yes/<<>>\1/' | grep "<<>>" | sed "s/<<>>//")"
-	[ -n "${bluetooth}" ] && bluetooth="${dlm}^c#81a1c1^ ${bluetooth}^d^"
+	fontColor="$(getColor '81a1c1')"
+	[ -n "${bluetooth}" ] && bluetooth="${dlm}^c#${fontColor}^ ${bluetooth}^d^"
 	printf '%s' "${bluetooth}"
 }
 
 getVolume() {
 	volume="$(pulsemixer --get-volume | cut -d' ' -f1)%"
-	[ -n "${volume}" ] && volume="${dlm}^c#93a1a1^🔊 ${volume}^d^"
+	fontColor="$(getColor '93a1a1')"
+	[ -n "${volume}" ] && volume="${dlm}^c#${fontColor}^🔊 ${volume}^d^"
 	printf '%s' "${volume}"
 }
 
 getRates() {
 	rxtxrates="$( (cat /tmp/.datarates ; grep wlan0 /proc/net/dev) | awk '{if(l1){printf "%.3f ↑ %.3f ↓\n", ($2-l1)/1024^2*8, ($10-l2)/1024^2*8} else{l1=$2; l2=$10;}}' )"
 	grep wlan0 /proc/net/dev > /tmp/.datarates
-	[ -n "${rxtxrates}" ] && rxtxrates="${dlm}^c#92ee791^${rxtxrates}^d^"
+	fontColor="$(getColor '92ee79')"
+	[ -n "${rxtxrates}" ] && rxtxrates="${dlm}^c#${fontColor}1^${rxtxrates}^d^"
 	printf '%s' "${rxtxrates}"
 }
 
 getCpuTemp() {
 	temp="$(($(cat /sys/class/thermal/thermal_zone0/temp) / 1000))°C"
-	[ -n "${temp}" ] && temp="${dlm}^c#13a1a1^🌡️ ${temp}^d^"
+	fontColor="$(getColor '13a1a1')"
+	[ -n "${temp}" ] && temp="${dlm}^c#${fontColor}^🌡️ ${temp}^d^"
 	printf '%s' "${temp}"
 }
 
 getWattage() {
 	wattage="$(awk '{printf "%.0f", $1*10^-6}' /sys/class/power_supply/BAT1/power_now)"
-	[ -n "${wattage}" ] && wattage="${dlm}^c#5e81ac^⚡ ${wattage}W^d^"
+	fontColor="$(getColor '5e81ac')"
+	[ -n "${wattage}" ] && wattage="${dlm}^c#${fontColor}^⚡ ${wattage}W^d^"
 	printf '%s' "${wattage}"
 
 }
 
 getBrightness() {
 	brightness="$(cat /sys/class/backlight/amdgpu_bl1/brightness)/255"
-	[ -n "${brightness}" ] && brightness="${dlm}^c#4321f1^🔆 ${brightness}^d^"
+	fontColor="$(getColor '4321f1')"
+	[ -n "${brightness}" ] && brightness="${dlm}^c#${fontColor}^🔆 ${brightness}^d^"
 	printf '%s' "${brightness}"
 }
 
 getNumberOfTmuxSessions() {
 	numberOfSessions="$(2>/dev/null tmux ls | wc -l)"
-	[ ! "${numberOfSessions}" = "0" ] && numberOfSessions="${dlm}^c#92ee791^ ${numberOfSessions}^d^"
+	fontColor="$(getColor '92ee79')"
+	[ ! "${numberOfSessions}" = "0" ] && numberOfSessions="${dlm}^c#${fontColor}1^ ${numberOfSessions}^d^"
 	printf '%s' "${numberOfSessions}"
 }
 

@@ -11,4 +11,4 @@ ColorMyPencils("gruvbox")
 -- ColorMyPencils("habamax")
 
 -- For outside
--- ColorMyPencils("peachpuff")
+-- ColorMyPencils("zellner")
