@@ -86,7 +86,7 @@ null_ls.setup({
 	}
 })
 
--- require("norme").setup({
--- 	-- Your configuration
--- 	cmd = os.getenv('HOME') .. '/.local/bin/norminette'
--- })
+require("norme").setup({
+	-- Your configuration
+	cmd = os.getenv('HOME') .. '/.local/bin/norminette'
+})

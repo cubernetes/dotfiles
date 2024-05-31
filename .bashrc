@@ -46,16 +46,18 @@ COMMANDS_="${COMMANDS_-} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
 [ -z "${PS1-}" ] && return
 set -o emacs
 tabs -4
-shopt -s histappend
-shopt -s checkwinsize
-shopt -s extglob
 shopt -u histverify
+shopt -s extglob
 shopt -s autocd
+
+shopt -s histappend
+shopt -s histreedit
+shopt -s checkwinsize
 HISTSIZE='-1'
 HISTFILESIZE='-1'
-HISTFILE="${HOME}"/.bash_history
+HISTFILE="${HOME}"/.tosu_bash_history
 HISTTIMEFORMAT=$'\033[m%F %T: '
-HISTCONTROL='ignoreboth:erasedups'
+HISTCONTROL='ignoreboth'
 # PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
@@ -73,7 +75,6 @@ elif 2>/dev/null 1>&2 command -v nvi; then
 elif 2>/dev/null 1>&2 command -v vi; then
     alias v='vi'
 fi
-
 alias tapo_bright='ssh -t pt bash -ic tapo_bright'
 alias tapo_color_ambience='ssh -t pt bash -ic tapo_color_ambience'
 alias tapo_color_ambience2='ssh -t pt bash -ic tapo_color_ambience2'
@@ -180,7 +181,7 @@ function paruuu () {
 		&& [ ! "${ssid-}" = "Silmaril 4 (2.4)" ] \
 		&& [ -n "${ssid-}" ] \
 	&& : ; then
-		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
+		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
 		if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
 			exit
 		fi
@@ -553,3 +554,4 @@ aocload () {
 
 xmodmap ~/.Xmodmap
 alias q='docker run --rm -it ghcr.io/natesales/q'
+alias make='compiledb make'
