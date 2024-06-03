@@ -1,6 +1,9 @@
 #! /usr/bin/bash -
 # This file ought to be sourced, above line for syntax highlighting purposes.
 
+# Exit when noninteractive. Checking for empty PS1 doesn't work in dash.
+[ "${-#*i}" = "$-" ] && return
+
 ######################## BASH RESET #############################
 IFS=" 
 	"
@@ -15,18 +18,19 @@ builtin hash -r
 unset -v POSIXLY_CORRECT
 ######################## BASH RESET END #############################
 
-[ -z "${PS1-}" ] && return
-set -o emacs
-tabs -4
+####################### BASH SHELL OPTIONS #################################
 shopt -s extglob
 shopt -s checkwinsize
 shopt -s autocd
 
+######## HISTORY SHELL OPTIONS #########
 shopt -s histappend
 shopt -s histreedit
 shopt -u histverify
 shopt -s lithist
 shopt -s cmdhist
+
+###################### BETTER HISTORY ######################
 # declare -r BASH_SESSION_NAME="${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}"
 declare -r BASH_SESSION_NAME="${$}"
 HISTSIZE='-1'
@@ -37,14 +41,14 @@ HISTFILE="${HOME}/.better_bash_history/.bash_history_$(printf '%(%Y-%m-%d-%H-%M-
 write_history () {
 	[ -f "${HISTFILE}" ] &&
 		[ -r "${HISTFILE}" ] &&
-		<"${HISTFILE}" tee -a "${REAL_HISTFILE}" >/dev/null &&
+		<"${HISTFILE}" tee -a "${REAL_HISTFILE}" 1>/dev/null &&
 		rm -f "${HISTFILE}"
 }
 trap write_history EXIT
 HISTTIMEFORMAT=$'\033[m%F %T: '
 HISTCONTROL='ignoreboth'
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
+########################### vim aliases #####################
 if 2>/dev/null 1>&2 command -v nvim; then
     alias v='nvim'
     alias vi='nvim'
@@ -58,32 +62,24 @@ elif 2>/dev/null 1>&2 command -v nvi; then
 elif 2>/dev/null 1>&2 command -v vi; then
     alias v='vi'
 fi
-alias tapo_bright='ssh -t pt bash -ic tapo_bright'
-alias tapo_color_ambience='ssh -t pt bash -ic tapo_color_ambience'
-alias tapo_color_ambience2='ssh -t pt bash -ic tapo_color_ambience2'
+############# GENERAL ALIASES #####################
+alias cat='bat'
 alias gdb='gdb -q'
 alias objdump='objdump --disassembler-color=extended-color -Mintel'
-alias v='nvim'
-alias vim='nvim'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
+alias watch='watch -tcn.1 '
 alias sudo='sudo '
 alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-); eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
-alias watch='watch '
 alias tmux='tmux -2'
 alias open='xdg-open'
 alias xcopy='xsel --clipboard --input'
 alias xpaste='xsel --clipboard --output'
-alias aptclean='sudo apt -y update && sudo apt -y full-upgrade &&
-                sudo apt -y dist-upgrade && sudo apt -y autoremove &&
-                sudo apt -y clean'
-# shellcheck disable=SC2032
 alias pacman='pacman --color=auto'
 alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
 alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
-# alias l='lsd --timesort --color=auto -harZ1l'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias ls='\ls --width="${COLUMNS:-80}" --color=auto -bC'
 alias ip='ip -color=auto'
@@ -103,27 +99,13 @@ alias colors='bash -c "$(curl --silent --location \
 )"'
 alias sl='sl -GwFdcal'
 alias cmatrix='cmatrix -u3 -Cred'
-alias gca='git add -u && git commit -m "Automatic add"'
-alias watch='watch -tcn.1'
-alias pacop='clear && 2>/dev/null paco && 2>/dev/null paco --strict'
-alias xterm='xterm -bg black -fg white'
-alias norm='alacritty -e sh -c '\''watch -cn.5 \
-            norminette -R CheckForbiddenSourceHeader'\'' & disown'
-alias norm2='alacritty -e sh -c '\''watch -cn.5 \
-            norminette -R CheckForbiddenSourceHeader \| \
-            xargs -I{} printf \"{} \#\#\# \"'\'' & disown'
-alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 alias r='ranger'
-2>/dev/null dotconf config status.showUntrackedFiles no
+alias q='docker run --rm -it ghcr.io/natesales/q'
+alias make='compiledb make'
+alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 
-# auto_pushd
-function cd () {
-	command cd "${@}" || return 1
-	pwd="${PWD}"
-	1>/dev/null command cd - || return 1
-	1>/dev/null pushd "${pwd}" || return 1
-}
 
+#################### CDPATHS #############################
 CDPATH="${CDPATH}:${HOME}"
 CDPATH="${CDPATH}:${HOME}/projects"
 CDPATH="${CDPATH}:${HOME}/projects/aoc"
@@ -131,6 +113,16 @@ CDPATH="${CDPATH}:${HOME}/projects/aoc/2023"
 CDPATH="${CDPATH}:${HOME}/42ecole"
 CDPATH="${CDPATH}:${HOME}/42ecole/42cursus"
 CDPATH="${CDPATH}:${HOME}/onnea"
+
+
+####################### FUNCTIONS ##############################
+# auto_pushd
+function cd () {
+	command cd "${@}" || return 1
+	pwd="${PWD}"
+	1>/dev/null command cd - || return 1
+	1>/dev/null pushd "${pwd}" || return 1
+}
 
 function paruuu () {
 	read -p 'Do system upgrade (Y) or exit (n)' choice
@@ -213,9 +205,9 @@ function wpa_restart () {
 }
 
 function bat () {
-	2>/dev/null command -v batcat && { batcat "${@}"; return 0; }
+	2>/dev/null command -v batcat && { $(type -P batcat) "${@}"; return 0; }
 	2>/dev/null command -v bat && { $(type -P bat) "${@}"; return 0; }
-	{ printf '%s\n' "bat not found"; return 1; }
+	$(type -P cat) "${@}"
 }
 
 function take () {
@@ -284,7 +276,9 @@ function clone42 () {
 	} || { printf '%s\n' "Could not clone repo!"; }
 }
 
-# shellcheck disable=SC2016
+
+############################# ENVIRONMENT ##########################
+# sslslcheck disable=SC2016
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME-}"/.ssh/config'
 if [ ! "${TERM-}" = "linux" ] ; then
 	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
@@ -299,6 +293,7 @@ if [ ! "${TERM-}" = "linux" ] ; then
 		export TERM='screen'
 	fi
 fi
+
 # shellcheck disable=SC2155
 export VISUAL="$(2>/dev/null type -P nvim)"
 # shellcheck disable=SC2155
@@ -311,7 +306,6 @@ export EDITOR="$({ type -P nvim ||
                    type -P ex   ||
                    type -P ed; } 2>/dev/null)"
 export SUDO_EDITOR="${EDITOR-}"
-export GIT_PS1_SHOWDIRTYSTATE='1'
 export MANPAGER='nvim +Man!'
 [ -z "${DISPLAY-}" ] && echo 'Warning: DISPLAY is not set'
 
@@ -321,6 +315,7 @@ export MANPAGER='nvim +Man!'
 # shellcheck disable=SC2016
 # PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
+#### BASH PRE-EXEC #####
 if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
 	curl --silent --location \
 "https://raw.githubusercontent.com/rcaloras\
@@ -355,6 +350,7 @@ precmd() {
 	fi
 }
 
+GIT_PS1_SHOWDIRTYSTATE='1'
 GIT_PROMPT="1"
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT-}" = "1" ] ; then
 	curl --silent --location \
@@ -392,49 +388,13 @@ if [ -f "${HOME}"/git-prompt.sh ] && [ -r "${HOME}"/git-prompt.sh ] && \
 else
     PS1="${_PS1_1-}${_PS1_2-}"
 fi
-######################### PROMPT STUFF END #######################
-
-# Key Repeat/Delay Rate
-2>/dev/null xset r rate 200 60
-# Disable bell
-2>/dev/null xset -b
-# sudo kbdrate --rate=30.0 --delay=250
-
-complete -C pomo pomo
-eval "$(keyring --print-completion bash)"
-
-# shellcheck disable=SC1091
-if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
 # unset PROMPT_COMMAND PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
 
-push_swap_perf () {
-	url="${1}"
-	perf_dir="${2}"
-	[ -z "${url}" ] && { echo "Expected two parameters (url && perf_dir)" ; return ; }
-	[ -z "${perf_dir}" ] && { echo "Expected two parameters (url && perf_dir)" ; return ; }
-	rm -rf -- "${perf_dir}" || { echo "Couldn't return" ; return ; }
-	git clone --quiet --depth 1 "${url}" "${perf_dir}" || { echo "Couldn't clone" ; return ; }
-	[ -f "./stack_a.txt" ] || { echo "File ./stack_a.txt does not exist!" ; return ; }
-	stack_a_file="$(readlink -f -- "./stack_a.txt")"
-	2>/dev/null 1>/dev/null pushd -- "${perf_dir}" || { echo "Couldn't cd into '${perf_dir}'" ; return ; }
-	makefile_dir="$(find . -name Makefile | awk '{printf "%s|%s\n", $0, length($0)}' | sort -t'|' -k2,2g | head -1 | awk -F'|' '{print $1}' | xargs -r dirname)"
-	[ -z "${makefile_dir}" ] && { echo "No Makefile found" ; return ; }
-	2>/dev/null 1>/dev/null pushd -- "${makefile_dir}" || { echo "Couldn't cd into '${makefile_dir}'" ; return ; }
-	find . -type f -exec sed -i -e 's/-Werror//g' {} \;
-	find . -type f -exec sed -i -e 's/rewind/rewindx/g' {} \;
-	2>/dev/null 1>/dev/null make -j$(nproc) -i -k -s || { echo "Couldn't run make" ; return ; }
-	ops="$(2>/dev/null ./push_swap $(cat -- "${stack_a_file}") | wc -l)"
-	echo "ops;${ops}"
-	2>/dev/null 1>/dev/null popd
-	2>/dev/null 1>/dev/null popd
-}
 
-# Add these to your ~/.bash_aliases
-
+############################# AOC ########################
 AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
-
 alias aos="python3 solution.py < in.txt"
 alias aot="printf '\033[34m'; python3 solution.py < test.txt; printf '\033[m'"
 alias aoc="aot; echo; aos"
@@ -538,6 +498,17 @@ aocload () {
 	tmux send-keys "nvim './solution.py'" ENTER
 }
 
-xmodmap ~/.Xmodmap
-alias q='docker run --rm -it ghcr.io/natesales/q'
-alias make='compiledb make'
+###################### GENERAL SETTINGS #######################
+tabs -4
+set -o emacs
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# Key Repeat/Delay Rate
+2>/dev/null xset r rate 200 60
+# sudo kbdrate --rate=30.0 --delay=250
+
+# Disable bell
+2>/dev/null xset -b
+
+# shellcheck disable=SC1091
+if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
