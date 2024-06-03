@@ -19,6 +19,8 @@ function log () {
 bluetoothctl power on \
 	&& bluetoothctl connect "${DEVICE_MAC}"
 
+pactl set-default-sink "${DEVICE_SINK}" || true
+
 bluetoothctl connect "${DEVICE_MAC}" ||
 	{ sleep 3; bluetoothctl connect "${DEVICE_MAC}"; }
 

@@ -5,62 +5,45 @@
 IFS=" 
 	"
 POSIXLY_CORRECT='1'
-COMMANDS_="builtin unalias unset read printf command exit type . tr fc compgen"
-COMMANDS_="${COMMANDS_-} wc sed grep xargs sudo shopt kill ps head awk clear"
-COMMANDS_="${COMMANDS_-} curl wget source check mv mkdir rm rmdir while do done"
-COMMANDS_="${COMMANDS_-} cc gcc g++ clang basename clone42 git alias export pwd"
-COMMANDS_="${COMMANDS_-} docker shift until for in bash sh dash ash ksh zsh top"
-COMMANDS_="${COMMANDS_-} shellcheck watch cmatrix alacritty tmux zellij ssh"
-COMMANDS_="${COMMANDS_-} which date df du case esac crontab ping base64 apt"
-COMMANDS_="${COMMANDS_-} paru pacman yum dnf aptitude apt-get yay rpm dpkg env"
-COMMANDS_="${COMMANDS_-} awk apropos help info dirname bc dc break continue"
-COMMANDS_="${COMMANDS_-} unzip zip tar untar gzip gunzip xz unxz base32 cal"
-COMMANDS_="${COMMANDS_-} chattr cfdisk fdisk passwd chroot cmp cron split dd"
-COMMANDS_="${COMMANDS_-} df dir declare diff dircolors dmesg eval exec egrep"
-COMMANDS_="${COMMANDS_-} false true : fg bg free fold find file gawk groupadd"
-COMMANDS_="${COMMANDS_-} less more cat head tail chmod chown history sleep yes"
-COMMANDS_="${COMMANDS_-} useradd adduser addgroup usermod groupdel userdel xxd"
-COMMANDS_="${COMMANDS_-} groups users who w last hash hostname htop ip ifconfig"
-COMMANDS_="${COMMANDS_-} install ifdown ifup jobs killall pkill pgrep klist"
-COMMANDS_="${COMMANDS_-} link ln unlink let local logout logname lsblk lsof"
-COMMANDS_="${COMMANDS_-} pidof lspci lsusb lscpu make mktemp mount umount nc"
-COMMANDS_="${COMMANDS_-} ncat nmap nft iptables ufw firewall-cmd nl nslookup"
-COMMANDS_="${COMMANDS_-} open xdg-open whereis whatis write wall agetty amixer"
-COMMANDS_="${COMMANDS_-} pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex"
-COMMANDS_="${COMMANDS_-} od pushd popd pv pvs lvs vgs rsync screen sed seq wait"
-COMMANDS_="${COMMANDS_-} ftp sftp shift shuf sort uniq su strace sync tee test"
-COMMANDS_="${COMMANDS_-} time trap tr tty ulimit umask unix2dos dos2unix uptime"
-COMMANDS_="${COMMANDS_-} paco francinette cd ls disown whoami reboot systemctl"
-COMMANDS_="${COMMANDS_-} shutdown poweroff set x touch stat cp scp man locate"
-COMMANDS_="${COMMANDS_-} xset kbdrate return cut batcat id ed vi vim nvim nano"
-COMMANDS_="${COMMANDS_-} skill norminette bat echo if then fi else function"
-COMMANDS_="${COMMANDS_-} PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4"
+declare -a __COMMANDS=(builtin unalias unset read printf command exit type tr fc compgen wc sed grep xargs sudo shopt kill ps head awk clear curl wget source check mv mkdir rm rmdir while do done cc gcc clang basename clone42 git alias export pwd docker shift until for in bash sh dash ash ksh zsh top shellcheck watch cmatrix alacritty tmux zellij ssh which date df du case esac crontab ping base64 apt paru pacman yum dnf aptitude yay rpm dpkg env awk apropos help info dirname bc dc break continue unzip zip tar untar gzip gunzip xz unxz base32 cal chattr cfdisk fdisk passwd chroot cmp cron split dd df dir declare diff dircolors dmesg eval complete exec egrep false true fg bg free fold find file gawk groupadd less more cat head tail chmod chown history trap sleep yes useradd adduser addgroup usermod groupdel userdel xxd groups users who w last hash hostname htop ip ifconfig install ifdown ifup jobs killall pkill pgrep klist link ln unlink let local logout logname lsblk lsof pidof lspci lsusb lscpu make mktemp mount umount nc ncat nmap nft iptables ufw nl nslookup open whereis whatis write wall agetty amixer pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex od pushd popd pv pvs lvs vgs rsync screen sed seq wait ftp sftp shift shuf sort uniq su strace sync tee test time trap tr tty ulimit umask unix2dos dos2unix uptime paco francinette cd ls disown whoami reboot systemctl shutdown poweroff set x touch stat cp scp man locate xset kbdrate return cut batcat id ed vi vim nvim nano skill norminette bat echo if then fi else function PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4 tabs xmodmap lesspipe CDPATH dotconf)
+declare -a __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # commands that are not alnum
 # shellcheck disable=SC2086
-2>/dev/null \unset -f -- ${COMMANDS_-} || true
+2>/dev/null \unset -f -- "${__ALL_COMMANDS[@]}" || true
 # shellcheck disable=SC2086
-2>/dev/null \unalias -- ${COMMANDS_-} || true
-\builtin -- hash -r
-2>/dev/null \unset -- POSIXLY_CORRECT COMMANDS_
+2>/dev/null \unalias -- "${__ALL_COMMANDS[@]}" || true
+builtin hash -r
+unset -v POSIXLY_CORRECT
 ######################## BASH RESET END #############################
 
 [ -z "${PS1-}" ] && return
 set -o emacs
 tabs -4
-shopt -u histverify
 shopt -s extglob
+shopt -s checkwinsize
 shopt -s autocd
 
 shopt -s histappend
 shopt -s histreedit
-shopt -s checkwinsize
+shopt -u histverify
+shopt -s lithist
+shopt -s cmdhist
+# declare -r BASH_SESSION_NAME="${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}"
+declare -r BASH_SESSION_NAME="${$}"
 HISTSIZE='-1'
 HISTFILESIZE='-1'
-HISTFILE="${HOME}"/.tosu_bash_history
+REAL_HISTFILE="${HOME}/.better_bash_history/.bash_history_$(printf '%(%Y-%m-%d)T')_daily"
+history -c; history -r "${REAL_HISTFILE}"
+HISTFILE="${HOME}/.better_bash_history/.bash_history_$(printf '%(%Y-%m-%d-%H-%M-%S)T')_${BASH_SESSION_NAME}"
+write_history () {
+	[ -f "${HISTFILE}" ] &&
+		[ -r "${HISTFILE}" ] &&
+		<"${HISTFILE}" tee -a "${REAL_HISTFILE}" >/dev/null &&
+		rm -f "${HISTFILE}"
+}
+trap write_history EXIT
 HISTTIMEFORMAT=$'\033[m%F %T: '
 HISTCONTROL='ignoreboth'
-# PROMPT_COMMAND="history -n; history -w; history -c; history -r"
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-
 
 if 2>/dev/null 1>&2 command -v nvim; then
     alias v='nvim'
@@ -316,15 +299,17 @@ if [ ! "${TERM-}" = "linux" ] ; then
 		export TERM='screen'
 	fi
 fi
-# # shellcheck disable=SC2155
-# export VISUAL="$(2>/dev/null $(type -P nvim))"
-export VISUAL="vi"
-# # shellcheck disable=SC2155
-export EDITOR="vi"
-# export EDITOR="$(2>/dev/null $(type -P vim)  ||
-#                  2>/dev/null $(type -P vi)   ||
-#                  2>/dev/null $(type -P nano) ||
-#                  2>/dev/null $(type -P ed))"
+# shellcheck disable=SC2155
+export VISUAL="$(2>/dev/null type -P nvim)"
+# shellcheck disable=SC2155
+export EDITOR="$({ type -P nvim ||
+                   type -P vim  ||
+                   type -P vi   ||
+                   type -P nvi  ||
+                   type -P hx   ||
+                   type -P nano ||
+                   type -P ex   ||
+                   type -P ed; } 2>/dev/null)"
 export SUDO_EDITOR="${EDITOR-}"
 export GIT_PS1_SHOWDIRTYSTATE='1'
 export MANPAGER='nvim +Man!'
@@ -347,6 +332,7 @@ fi
 . "${HOME}"/.bash-preexec.sh
 
 preexec() {
+	history -a
 	TIMESTAMP_BEFORE="$(date +%s)"
 }
 precmd() {
@@ -421,7 +407,7 @@ eval "$(keyring --print-completion bash)"
 if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
 
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
-# unset PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
+# unset PROMPT_COMMAND PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
 
 push_swap_perf () {
 	url="${1}"
