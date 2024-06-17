@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[ -t 1 ] &&
+qrencode -m2 -t ANSI256UTF8 "$@" ||
+qrencode -m2 -t UTF8 "$@"

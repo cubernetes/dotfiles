@@ -1,0 +1,27 @@
+#!/bin/sh
+
+err () {
+	printf '\033[31m%s\033[m\n' "$*"
+}
+
+# mia's 0x0.st -- fast!
+curl -sfSL -F"file=@${1:--}" 0x0.st && exit 0
+err "Mia's (0x0.st) pastebin failed!"
+
+# pb1n.de -- fast!
+curl -sfSL -F"f=@${1:--}" pb1n.de && exit 0
+err "pb1n.de pastebin failed!"
+
+# chris titus' hastebin -- not that fast
+response="$(curl -sfSL --data-binary @"${1:--}" bin.christitus.com/documents)" &&
+	{ hasteKey="$(printf %s "$response" | jq -r '.key')" && [ -n "${hasteKey}" ] &&
+		echo "http://bin.christitus.com/raw/$hasteKey" && exit 0 || err "Couldn't extract hasteKey. Sorry!"; }
+err "Chris' pastebin failed!"
+
+# paste.rs -- damn slow
+curl -sfSL --data-binary @"${1:--}" paste.rs && exit 0
+err "paste.rs pastebin failed!"
+
+# ix.io, broken
+curl -sfSL -F"f=@${1:--}" pb1n.de && exit 0
+err "ix.io pastebin failed!"
