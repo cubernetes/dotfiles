@@ -77,8 +77,8 @@ export USER42='tischmid'
 export EMAIL42='timo42@proton.me'
 export MAIL='timo42@proton.me'
 
-export LANG='en_US.UTF-8'
-export LC_ALL='en_US.UTF-8'
+# export LANG='en_US.UTF-8'
+# export LC_ALL='en_US.UTF-8'
 
 export GOPATH="${HOME}"/go
 

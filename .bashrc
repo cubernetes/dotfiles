@@ -8,7 +8,7 @@
 IFS=" 
 	"
 POSIXLY_CORRECT='1'
-declare -a __COMMANDS=(builtin unalias unset read printf command exit type tr fc compgen wc sed grep xargs sudo shopt kill ps head awk clear curl wget source check mv mkdir rm rmdir while do done cc gcc clang basename clone42 git alias export pwd docker shift until for in bash sh dash ash ksh zsh top shellcheck watch cmatrix alacritty tmux zellij ssh which date df du case esac crontab ping base64 apt paru pacman yum dnf aptitude yay rpm dpkg env awk apropos help info dirname bc dc break continue unzip zip tar untar gzip gunzip xz unxz base32 cal chattr cfdisk fdisk passwd chroot cmp cron split dd df dir declare diff dircolors dmesg eval complete exec egrep false true fg bg free fold find file gawk groupadd less more cat head tail chmod chown history trap sleep yes useradd adduser addgroup usermod groupdel userdel xxd groups users who w last hash hostname htop ip ifconfig install ifdown ifup jobs killall pkill pgrep klist link ln unlink let local logout logname lsblk lsof pidof lspci lsusb lscpu make mktemp mount umount nc ncat nmap nft iptables ufw nl nslookup open whereis whatis write wall agetty amixer pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex od pushd popd pv pvs lvs vgs rsync screen sed seq wait ftp sftp shift shuf sort uniq su strace sync tee test time trap tr tty ulimit umask unix2dos dos2unix uptime paco francinette cd ls disown whoami reboot systemctl shutdown poweroff set x touch stat cp scp man locate xset kbdrate return cut batcat id ed vi vim nvim nano skill norminette bat echo if then fi else function PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4 tabs xmodmap lesspipe CDPATH dotconf)
+declare -a __COMMANDS=(builtin unalias unset read printf command exit type tr fc compgen wc sed grep xargs sudo shopt kill ps head awk clear curl wget source check mv mkdir rm rmdir while do done cc gcc clang basename clone42 git alias export pwd docker shift until for in bash sh dash ash ksh zsh top shellcheck watch cmatrix alacritty tmux zellij ssh which date df du case esac crontab ping base64 apt paru pacman yum dnf aptitude yay rpm dpkg env awk apropos help info dirname bc dc break continue unzip zip tar untar gzip gunzip xz unxz base32 cal chattr cfdisk fdisk passwd chroot cmp cron split dd df dir declare diff dircolors dmesg eval complete exec egrep false true fg bg free fold find file gawk groupadd less more cat head tail chmod chown history trap sleep yes useradd adduser addgroup usermod groupdel userdel xxd groups users who w last hash hostname htop ip ifconfig install ifdown ifup jobs killall pkill pgrep klist link ln unlink let local logout logname lsblk lsof pidof lspci lsusb lscpu make mktemp mount umount nc ncat nmap nft iptables ufw nl nslookup open whereis whatis write wall agetty amixer pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex od pushd popd pv pvs lvs vgs rsync screen sed seq wait ftp sftp shift shuf sort uniq su strace sync tee test time trap tr tty ulimit umask unix2dos dos2unix uptime paco francinette cd ls disown whoami reboot systemctl shutdown poweroff set x touch stat cp scp man locate xset kbdrate return cut batcat id ed vi vim nvim nano skill norminette bat echo if then fi else function PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4 tabs xmodmap lesspipe CDPATH dotconf pomo)
 declare -a __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # commands that are not alnum
 # shellcheck disable=SC2086
 2>/dev/null \unset -f -- "${__ALL_COMMANDS[@]}" || true
@@ -104,7 +104,6 @@ alias q='docker run --rm -it ghcr.io/natesales/q'
 alias make='compiledb make'
 alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 
-
 #################### CDPATHS #############################
 CDPATH="${CDPATH}:${HOME}"
 CDPATH="${CDPATH}:${HOME}/projects"
@@ -123,6 +122,12 @@ function cd () {
 	1>/dev/null command cd - || return 1
 	1>/dev/null pushd "${pwd}" || return 1
 }
+
+function vimw () {
+	[ $# = 1 ] || { echo "Usage: vimw FILE"; return 1; }
+	vim $(type -P "$1")
+}
+complete -F _command vimw
 
 function paruuu () {
 	read -p 'Do system upgrade (Y) or exit (n)' choice
@@ -190,12 +195,15 @@ function skill () {
 	if [ -n "${1-}" ] ; then
 		# shellcheck disable=SC2046,SC2009
 		2>/dev/null kill -9 \
-			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}') \
+			-- $(ps auxww | grep -v grep | grep "${1-}" | awk '{print $2}') \
 			&& return 0
+		ps auxww | grep -v grep | grep -q "${1-}" || { echo "Process not found"; return 2; }
 		2>/dev/null sudo kill -9 \
-			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}')
+			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}') ||
+			{ echo "Couldn't kill process"; return 3; }
 	else
 		echo 'Please provide one argument'
+		return 1;
 	fi
 }
 
@@ -205,8 +213,8 @@ function wpa_restart () {
 }
 
 function bat () {
-	2>/dev/null command -v batcat && { $(type -P batcat) "${@}"; return 0; }
-	2>/dev/null command -v bat && { $(type -P bat) "${@}"; return 0; }
+	2>/dev/null 1>&2 command -v batcat && { $(type -P batcat) "${@}"; return 0; }
+	2>/dev/null 1>&2 command -v bat && { $(type -P bat) "${@}"; return 0; }
 	$(type -P cat) "${@}"
 }
 
@@ -512,3 +520,7 @@ set -o emacs
 
 # shellcheck disable=SC1091
 if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
+
+# PS1='[${SHLVL}] '"${PS1}"
+
+# export BAT_THEME='gruvbox-light'

@@ -30,10 +30,13 @@ white = "#abb2bf"
 yellow = "#da8548"
 
 [colors.primary]
-background = "#282c34"
-foreground = "#bbc2cf"
+# outside
 # foreground = "#000000"
 # background = "#ffffff"
+
+# inside
+background = "#282c34"
+foreground = "#bbc2cf"
 
 [colors.selection]
 background = "#3e4451"
