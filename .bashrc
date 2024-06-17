@@ -192,7 +192,7 @@ function paruuu () {
 }
 
 function skill () {
-	if [ -n "${1-}" ] ; then
+	while [ -n "${1:-}" ] ; do
 		# shellcheck disable=SC2046,SC2009
 		2>/dev/null kill -9 \
 			-- $(ps auxww | grep -v grep | grep "${1-}" | awk '{print $2}') \
@@ -201,10 +201,7 @@ function skill () {
 		2>/dev/null sudo kill -9 \
 			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}') ||
 			{ echo "Couldn't kill process"; return 3; }
-	else
-		echo 'Please provide one argument'
-		return 1;
-	fi
+	done
 }
 
 function wpa_restart () {
