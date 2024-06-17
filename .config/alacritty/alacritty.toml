@@ -2,8 +2,9 @@ live_config_reload = true
 
 [bell]
 animation = "EaseOutExpo"
-color = "0xffffff"
-duration = 0
+# color = "0xffffff"
+color = "0x111111"
+duration = 100
 
 [colors.bright]
 black = "#5b6268"

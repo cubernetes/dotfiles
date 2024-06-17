@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh -
 
 for pid in $(pgrep -f "updatebar") ; do
 	[ "${pid}" != "${$}" ] && 2>/dev/null kill -9 "${pid}"

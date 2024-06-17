@@ -1,17 +1,16 @@
-#!/bin/bash
+#! /bin/sh -
 
-set -euo pipefail
 ###################### STOP ###################
 # Put device in pairing mode!!!
 
-# MUST be uppercase
+# hex MUST be uppercase
 MX5_MAC="AC:80:0A:6D:F3:7B"
 MX3_MAC="14:3F:A6:A8:7F:CD"
 
-DEVICE_MAC="${MX5_MAC}"
+DEVICE_MAC="$MX5_MAC"
 
-function log () {
-	printf "\n\033[31m%s\033[m\n" "${@}" >/dev/tty
+log () {
+	printf "\n\033[31m%s\033[m\n" "$*" >/dev/tty
 }
 
 log "rfkill block bluetooth..."
@@ -33,7 +32,7 @@ sleep 3
 
 log "Powering on bluetooth agent..."
 cat <<- CMDS
-	power on 
+	power on
 	agent on
 	default-agent
 	pairable on

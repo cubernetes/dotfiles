@@ -1,27 +1,36 @@
-#!/bin/sh
+#! /bin/sh -
 
 err () {
 	printf '\033[31m%s\033[m\n' "$*"
 }
 
-# mia's 0x0.st -- fast!
-curl -sfSL -F"file=@${1:--}" 0x0.st && exit 0
-err "Mia's (0x0.st) pastebin failed!"
+trap 'rm -f "$file"' EXIT
 
-# pb1n.de -- fast!
-curl -sfSL -F"f=@${1:--}" pb1n.de && exit 0
-err "pb1n.de pastebin failed!"
+[ ! -t 0 ] && [ -z "$1" ] && file=$(mktemp) && cat >"$file" || [ -n "$1" ] && file="$1"
 
-# chris titus' hastebin -- not that fast
-response="$(curl -sfSL --data-binary @"${1:--}" bin.christitus.com/documents)" &&
-	{ hasteKey="$(printf %s "$response" | jq -r '.key')" && [ -n "${hasteKey}" ] &&
-		echo "http://bin.christitus.com/raw/$hasteKey" && exit 0 || err "Couldn't extract hasteKey. Sorry!"; }
-err "Chris' pastebin failed!"
+# mia's 0x0.st -- fast! -- prints \n
+# curl -sfSL -F"file=@$file" 0x0.st && exit 0 ; err "Mia's (0x0.st) pastebin failed!"
 
-# paste.rs -- damn slow
-curl -sfSL --data-binary @"${1:--}" paste.rs && exit 0
-err "paste.rs pastebin failed!"
+# pb1n.de -- fast! -- prints \n
+# curl -sfSL -F"f=@$file" pb1n.de && exit 0 ; err "pb1n.de pastebin failed!"
 
-# ix.io, broken
-curl -sfSL -F"f=@${1:--}" pb1n.de && exit 0
-err "ix.io pastebin failed!"
+# chris titus' hastebin -- not that fast -- prints \n
+# response="$(curl -sfSL --data-binary @"$file" bin.christitus.com/documents)" &&
+# 	{ hasteKey="$(printf %s "$response" | jq -r '.key')" && [ -n "${hasteKey}" ] &&
+# 		echo "http://bin.christitus.com/raw/$hasteKey" && exit 0 || err "Couldn't extract hasteKey. Sorry!"; }
+# err "Chris' pastebin failed!"
+
+# paste.rs -- damn slow -- prints without \n
+# curl -sfSL --data-binary @"$file" paste.rs && exit 0 ; err "paste.rs pastebin failed!"
+
+# transfer.sh -- requires https -- not that fast -- prints \n
+curl -sfSL --upload-file "$file" https://transfer.sh && exit 0 ; err "transfer.sh pastebin failed!"
+
+# clbin.com -- requires https -- not that fast -- prints \n
+curl -sfSL -F"clbin=<$file" https://clbin.com && exit 0 ; err "clbin.com pastebin failed!"
+
+# sprunge.us -- RIP
+curl -sfSL -F"sprunge=<$file" http://sprunge.us && exit 0 ; err "sprunge.us pastebin failed!"
+
+# ix.io, "taking a break" -- RIP
+curl -sfSL -F"f:1=<$file" ix.io && exit 0 ; err "ix.io pastebin failed!"

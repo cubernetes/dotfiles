@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh -
 
 if [ -t 0 ] && [ -n "${1}" ]; then
 	while [ -n "${1}" ]; do

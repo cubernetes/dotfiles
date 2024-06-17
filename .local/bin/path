@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh -
 # POSIX-compliant shell script to print the PATH contents line by line,
 # without duplicated, in order, without empty lines.
 

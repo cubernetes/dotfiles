@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#! /bin/bash --
 
 choose_from_menu () {
     local prompt="${1}"

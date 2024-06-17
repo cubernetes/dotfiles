@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh -
 
 run () {
 	if [ "$(date "+%H")" = "06" ] ; then
@@ -6,7 +6,7 @@ run () {
 	fi
 	sleep 10
 	export PATH="${PATH}:/home/tosuman/.local/bin"
-	export SHELL='/usr/bin/bash'
+	export SHELL='/bin/bash'
 
 	number_of_tmux_sessions="$(tmux ls | wc -l)"
 

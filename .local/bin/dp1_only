@@ -1,2 +1,2 @@
-#!/bin/sh
-xrandr --output DP-1 --auto --output eDP-1 --off
+#! /bin/sh -
+exec xrandr --output DP-1 --auto --output eDP-1 --off
