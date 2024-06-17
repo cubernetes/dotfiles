@@ -6,13 +6,13 @@ __arrvar="__arr_random_n8241vn81y39c"
 
 in_list () {
 	max_idx="$(($1))"
-	arg="$2"
+	arg="$(printf %s "$2" | sed 's|/\+|/|g; s|/$||')"
 	[ "$max_idx" -ge 1 ] || return 1
 	[ -n "$arg" ] || return 2
 	idx_in_list=0
 	while [ "$idx_in_list" -le "$max_idx" ]; do
 		val="$(eval "printf %s "'"'"\$${__arrvar}_$idx_in_list"'"')"
-		[ "$val" = "$arg" ] && return 0
+		[ "$val" = "${arg}" ] && return 0
 		idx_in_list="$((idx_in_list+1))"
 	done
 	return 1
@@ -26,6 +26,7 @@ done
 
 idx=0
 printf "%s\n" "$PATH" | sed "s/^:\+//; s/:\+$//; s/:\+/\n/g" | while IFS= read -r line; do
+	line="$(printf %s "$line" | sed 's|/\+|/|g; s|/$||')"
 	in_list "$idx" "$line" && continue
 	printf "%s\n" "$line"
 	eval "${__arrvar}_$idx=\$line"
