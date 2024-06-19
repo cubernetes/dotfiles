@@ -124,8 +124,10 @@ function cd () {
 }
 
 function vimw () {
-	[ $# = 1 ] || { echo "Usage: vimw FILE"; return 1; }
-	vim $(type -P "$1")
+	[ -z "$1" ] && { echo "Usage: vimw FILE [VIM_ARGS...]"; return 1; }
+	first="$1"
+	shift
+	vim "$@" $(type -P "$first")
 }
 complete -F _command vimw
 
