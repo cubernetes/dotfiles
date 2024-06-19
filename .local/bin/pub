@@ -5,6 +5,10 @@ err () {
 	printf '\033[31m%s\033[m\n' "$*" >&2
 }
 
+# TODO: Fallbacks with wget, nc, bash
+command -v curl >/dev/null 2>&1 || { echo "Need curl"; exit 1; }
+command -v timeout >/dev/null 2>&1 || { echo "Need timeout(1)"; exit 1; }
+
 curl () {
 	output=$(timeout 5 curl -sfSL "$@") # strip trailing newline
 	err=$? # save exit status
@@ -23,7 +27,10 @@ file=$(mktemp --tmpdir pubtmpXXXXXXXXXXXXXXX) # must not contain dot .
 if [ -z "$1" ]; then
 	cat >"$file" # `pub` or `<file pub` or `echo bla | pub`
 else
-	cp "$1" "$file" # `pub FILE`
+	if ! cp "$1" "$file"; then # `pub FILE`
+		err "cp failed!"
+		exit 2
+	fi
 fi
 
 ######################## PASTEBINS ####################
