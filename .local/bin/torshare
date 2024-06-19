@@ -1,0 +1,50 @@
+#! /bin/sh -
+
+[ ! $# = 1 ] && { echo "Usage: torshare REGULAR_FILE"; exit 1; }
+target_file="$1"
+
+urlencode () {
+	str="$*"
+	encoded=
+	i=0
+	while [ "$i" -lt "${#str}" ]; do
+		c="$(printf '%s' "$str" | head -c "$((i + 1))" | tail -c 1; printf '.')"
+		c="${c%.}"
+		case "$c" in
+			[-_.~a-zA-Z0-9] ) x="$c" ;;
+			* ) x="$(printf '%%%02x' "'$c")" ;;
+		esac
+		encoded="$encoded$x"
+		i="$((i+1))"
+	done
+	printf %s "$encoded"
+}
+
+tor_host="$(instant_tor --daemonize)"
+ln -sf "$(readlink -f -- "$target_file")" "/tmp/.tmptor/html/$(basename -- "$target_file")"
+
+link="$(pub << GET_FILE_VIA_TOR
+#! /bin/sh -
+
+if [ ! -f ./instant_tor ] || ! command -v instant_tor > /dev/null 2>&1; then
+	wget -q https://timo.one/get_instant_tor/instant_tor || { echo "Failed to download instant_tor"; exit 1; }
+fi
+if [ ! -f ./instant_tor ]; then
+	if ! command -v instant_tor > /dev/null 2>&1; then
+		echo "instant_tor couldn't be downloaded"
+		exit 2
+	fi
+	ln -sf "$(command -v instant_tor)" .
+fi
+chmod +x ./instant_tor
+./instant_tor --daemonize || { printf '\033[42;30m%s\033[m\n' "Some error occured while starting tor proxy, trying to download anyways"; }
+curl -O --proxy socks5h://127.0.0.1:9050 "$tor_host/$(urlencode "$target_file")" || { echo "Some error occured downloading file"; exit 4; }
+echo "Successfully downloaded $target_file, size \$(wc -c < ./$(squote_escape "$target_file")) bytes."
+GET_FILE_VIA_TOR
+)"
+echo "Run at your own risk."
+printf '\033[31m%s\033[m\n' "curl $link|sh"
+printf %s "$link" | qr
+
+echo "Serving file via: $tor_host/$(urlencode "$target_file")"
+python3 -m http.server --bind 127.0.0.1 -d "/tmp/.tmptor/html/" 1336
