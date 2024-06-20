@@ -24,7 +24,7 @@ setxkbmap -layout us
 # 		read iid; xinput list-props $iid |
 # 		grep "Typing Enabled (" |
 # 		awk '{gsub(/\(|\)|:/,""); print $6}' |
-# 		xargs -I 'pid' xinput set-prop $iid 'pid' 0;
+# 		xargs -I pid xinput set-prop "$iid" pid 0;
 # 	}
 
 updatebar
@@ -32,86 +32,104 @@ updatebar
 
 
 
-
 ######################## More or less shell specific #####################
 pathappend () {
-	# just works
+	# appending a path to the PATH variable
+	# if it's already in the PATH, move it to the end
+	# POSIX compliant version
+
+	test -n "$1" ||
+		{ echo "Usage: pathappend PATH_TO_ADD"; return 1; }
+
+    test "$(printf %s $- | sed s/r//)" = $- ||
+		{ echo 'Restricted shell, cannot change PATH'; return 2; }
+
+	test -d "$1" ||
+		{ echo "PATH_TO_ADD not a directory"; return 3; }
+
+	test "$(printf %s "$1" | sed s/://)" = "$1" ||
+		{ echo 'Cannot add path with colon'; return 4; }
+
+    norm_path=$(printf %s "$PATH" | head -n 1 | sed 's|/\+|/|g; s|/$//') # ensure one line, deduplicate slashes, trim trailing
+    norm_path_to_add=$(printf %s "$1" | head -n 1 | sed 's|/\+|/|g; s|/$//') # ensure one line, deduplicate slashes, trim trailing
+	norm_path=$(printf %s "$norm_path" | sed "s/$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<<- 'EOF'
+		# escape BRE meta-characters
+		s/\\/\\./g # backslash first
+		s/\./\\./g
+		s/\^/\\^/g
+		s/\$/\\$/g
+		s/\*/\\*/g
+		s/\[/\\[/g
+		s|/|\\/|g # escape delimiter for outer sed
+	EOF
+	)//g") # remove all instances of PATH_TO_ADD from PATH
+	norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
+	PATH=$norm_path:$norm_path_to_add # append with colon
+} && export -f pathappend
+
+ld_lib_path_append () {
+	# just works, posix compliant
     NORM_PATH=":${PATH}:"
-    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
+    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/:+/:/g')"
 	# TODO: Handle Slashes
     NORM_PATH_TO_ADD=":${1}:"
     NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
     if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
         PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
     fi
-}
-export pathappend
+} && export -f ld_lib_path_append
 
-ld_lib_path_add () {
-	# just works
-    NORM_PATH=":${PATH}:"
-    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/::/:/g')"
-	# TODO: Handle Slashes
-    NORM_PATH_TO_ADD=":${1}:"
-    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
-    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
-        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
-    fi
-}
-export ld_lib_path_add
-
-eval "$(pyenv init --path)"
 
 # shellcheck disable=SC2155
-export XDG_RUNTIME_DIR=/run/user/"$(id -u)"
-export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR}"/ssh-agent.socket
-# export SUDO_ASKPASS='/usr/bin/sudo-askpass'
-# export SSH_ASKPASS='/usr/bin/sudo-askpass'
-# export SSH_ASKPASS_REQUIRE='prefer'
-export GIT_CONFIG_GLOBAL="${HOME}"/.gitconfig
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+# export SUDO_ASKPASS="/usr/bin/sudo-askpass"
+# export SSH_ASKPASS="/usr/bin/sudo-askpass"
+# export SSH_ASKPASS_REQUIRE="prefer"
+export GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
 # shellcheck disable=SC2155
 export GPG_TTY="$(tty)"
-export _JAVA_AWT_WM_NONREPARENTING='1'
+export _JAVA_AWT_WM_NONREPARENTING="1"
 
-export USER42='tischmid'
-export EMAIL42='timo42@proton.me'
-export MAIL='timo42@proton.me'
+export USER42="tischmid"
+export EMAIL42="timo42@proton.me"
+export MAIL="timo42@proton.me"
 
-# export LANG='en_US.UTF-8'
-# export LC_ALL='en_US.UTF-8'
+# export LANG="en_US.UTF-8"
+# export LC_ALL="en_US.UTF-8"
 
-export GOPATH="${HOME}"/go
+export GOPATH="$HOME/go"
 
-ld_lib_path_add "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
+ld_lib_path_append "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 export LD_LIBRARY_PATH
 
-pathappend '/bin'
-pathappend '/sbin'
-pathappend '/usr/bin'
-pathappend '/usr/sbin'
-pathappend '/usr/local/bin'
-pathappend '/usr/lcoal/sbin'
-pathappend '/usr/local/games'
-pathappend '/usr/games'
-pathappend '/snap/bin'
-pathappend "${HOME}"/bin
-pathappend "${HOME}"/.local/bin
-pathappend "${HOME}"/.local/include
-pathappend "${HOME}"/.brew/bin
-pathappend "${GOPATH}"/bin
+pathappend "/bin"
+pathappend "/sbin"
+pathappend "/usr/bin"
+pathappend "/usr/sbin"
+pathappend "/usr/local/bin"
+pathappend "/usr/lcoal/sbin"
+pathappend "/usr/local/games"
+pathappend "/usr/games"
+pathappend "/snap/bin"
+pathappend "${HOME}/bin"
+pathappend "${HOME}/.local/bin"
+pathappend "${HOME}/.local/include"
+pathappend "${HOME}/.brew/bin"
+pathappend "${GOPATH}/bin"
 export PATH
 
 # add cargo bin to path
-if [ -f "${HOME}"/.cargo/env ] || [ -r "${HOME}"/.cargo/env ]; then
+if [ -f "$HOME/.cargo/env" ] || [ -r "$HOME/.cargo/env" ]; then
 	# shellcheck disable=SC1091
-	. "${HOME}"/.cargo/env
+	. "$HOME/.cargo/env"
 fi
 
-export NVM_DIR="${HOME}"/.nvm
+export NVM_DIR="$HOME/.nvm"
 # shellcheck disable=SC1091
-[ -s "${NVM_DIR}"/nvm.sh ] && . "${NVM_DIR}"/nvm.sh
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 # shellcheck disable=SC1091
-[ -s "${NVM_DIR}"/bash_completion ] && . "${NVM_DIR}"/bash_completion
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 ######################## More or less shell specific END #####################
 
 picom &

@@ -100,11 +100,12 @@ alias colors='bash -c "$(curl --silent --location \
 alias sl='sl -GwFdcal'
 alias cmatrix='cmatrix -u3 -Cred'
 alias r='ranger'
-alias q='docker run --rm -it ghcr.io/natesales/q'
+alias q-dig='docker run --rm -it ghcr.io/natesales/q'
 alias make='compiledb make'
 alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 
 #################### CDPATHS #############################
+CDPATH="."
 CDPATH="${CDPATH}:${HOME}"
 CDPATH="${CDPATH}:${HOME}/projects"
 CDPATH="${CDPATH}:${HOME}/projects/aoc"
@@ -194,16 +195,24 @@ function paruuu () {
 }
 
 function skill () {
-	while [ -n "${1:-}" ] ; do
-		# shellcheck disable=SC2046,SC2009
-		2>/dev/null kill -9 \
-			-- $(ps auxww | grep -v grep | grep "${1-}" | awk '{print $2}') \
-			&& return 0
-		ps auxww | grep -v grep | grep -q "${1-}" || { echo "Process not found"; return 2; }
-		2>/dev/null sudo kill -9 \
-			-- $(ps auxww | grep "${1-}" | grep -v grep | awk '{print $2}') ||
-			{ echo "Couldn't kill process"; return 3; }
+	exit_status=0
+	while [ -n "${1-}" ] ; do
+		# pids="$(ps -eo pid,cmd)"
+		# pids="$(echo "$pids" | cut -d " " -f3- | grep -n -- "$1" | cut -d ":" -f1 | awk 'BEGIN{printf "NR=="}ORS="||NR=="' | head -n 1 | pids="$pids" xargs --no-run-if-empty -I {} bash -c 'echo "$pids" | cut -d " " -f2 | awk "${1}0"' bash {})"
+		pgrep -f -- "$1" | xargs -r kill -9 && return 0 || {
+			printf '\033[31m%s\033[m\n' "These processes couldn't be killed without sudo:"
+			pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
+		}
+		pgrep -f -- "$1" | sudo xargs -r kill -9 || {
+			if [ $? = 1 ]; then
+				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root:"
+				pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
+			fi
+			exit_status=1
+		}
+		shift
 	done
+	return $exit_status
 }
 
 function wpa_restart () {
