@@ -28,7 +28,7 @@ urlencode () {
 }
 
 tor_host="$(instant_tor --daemonize)" || { echo "Failed to start tor proxy"; exit 3; }
-ln -sf "$(readlink -f -- "$target_file")" "/tmp/.tmptor/html/$(basename -- "$target_file")"
+ln -sf "$(readlink -f -- "$target_file")" "/tmp/.tmptor/html/${target_file##*/}"
 
 link="$(pub << GET_FILE_VIA_TOR
 #! /bin/sh -
