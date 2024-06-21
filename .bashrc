@@ -1,3 +1,4 @@
+#! /bin/bash --
 # ex: set ts=4 sw=4 ft=sh
 
 # Exit when noninteractive. This is more portable than checking PS1.
@@ -26,7 +27,7 @@ good () { __log green "${@}" ; }
 _path_lookup () { type -P "$1"; } # adapted for bash.
 _have_all () { while [ $# -gt 0 ] ; do [ -x "$(_path_lookup "$1")" ] || return 1 ; shift ; done; }
 _have () { _have_all "$1"; }
-_source_if () { [ -r "$1" ] && . "$1"; }
+_source_if () { [ -f "$1" ] && [ -r "$1" ] && . "$1"; }
 
 ###################### exit when already sourced (posix) #######################
 [ -n "${BASHRC_SOURCED}" ] && { __log red ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
@@ -263,6 +264,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 
 ########################### general aliases (posix) ############################
+alias svi='sudo vi'
 alias open='xdg-open'
 alias dp='declare -p'
 alias wttr='curl -sfkSL wttr.in'
@@ -273,6 +275,7 @@ alias paco='"${HOME-}"/francinette/tester.sh'
 alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
 alias francinette='"${HOME-}"/francinette/tester.sh'
 alias q-dig='docker run --rm -it ghcr.io/natesales/q'
+alias q='duck'
 alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
 alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
@@ -395,9 +398,12 @@ skill () {
 			pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 		}
 		pgrep -f -- "$1" | sudo xargs -r kill -9 || {
-			if [ $? -eq 1 ] ; then
-				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root:"
+			if [ $? -ne 1 ] ; then
+				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root (sudo):"
 				pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
+			else
+				info Cancelled
+				return 3;
 			fi
 			exit_status=1
 		}

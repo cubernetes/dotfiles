@@ -1,17 +1,5 @@
+#! /bin/bash --
 # ex: set ts=4 sw=4 ft=sh
-
-# xrandr --setprovideroutputsource 1 0 --setprovideroutputsource 2 0
-
-# Configure Displays
-three-mon
-# xrandr --newmode "1600x900_60.00"  119.00  1600 1696 1864 2128  900 901 904 932  -HSync +Vsync
-# xrandr --addmode DVI-I-1-1 "1600x900_60.00"
-# xrandr --above DP-1 --output DVI-I-1-1 --auto --mode "1600x900_60.00" --left-of DP-1
-
-# Wallpaper Diashows
-# wp-dia hor eDP-1 10m
-# wp-dia wp-repo-1 HDMI-1 10m
-# wp-dia wp-repo-1 DP-1 10m
 
 # Keymap
 setxkbmap -layout us
@@ -28,9 +16,6 @@ setxkbmap -layout us
 # 		xargs -I pid xinput set-prop "$iid" pid 0;
 # 	}
 
-updatebar
-
-######################### More or less shell specific ##########################
 pathvarprepend () {
 	# prepending paths to pathvar denoted by the expansion of the PATHVAR parameter
 	# if it's already in the PATH, move it to the end
@@ -214,7 +199,21 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-####################### More or less shell specific END ########################
+
+# xrandr --setprovideroutputsource 1 0 --setprovideroutputsource 2 0
+
+# Configure Displays
+three-mon
+# xrandr --newmode "1600x900_60.00"  119.00  1600 1696 1864 2128  900 901 904 932  -HSync +Vsync
+# xrandr --addmode DVI-I-1-1 "1600x900_60.00"
+# xrandr --above DP-1 --output DVI-I-1-1 --auto --mode "1600x900_60.00" --left-of DP-1
+
+# Wallpaper Diashows
+# wp-dia hor eDP-1 10m
+# wp-dia wp-repo-1 HDMI-1 10m
+# wp-dia wp-repo-1 DP-1 10m
+
+updatebar
 
 picom &
 
