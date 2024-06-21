@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 # xrandr --setprovideroutputsource 1 0 --setprovideroutputsource 2 0
 
 # Configure Displays
@@ -29,56 +28,142 @@ setxkbmap -layout us
 
 updatebar
 
-
-
-
-######################## More or less shell specific #####################
-pathappend () {
-	# appending a path to the PATH variable
+######################### More or less shell specific ##########################
+pathvarprepend () {
+	# prepending paths to pathvar denoted by the expansion of the PATHVAR parameter
 	# if it's already in the PATH, move it to the end
 	# POSIX compliant version
 
-	test -n "$1" ||
-		{ echo "Usage: pathappend PATH_TO_ADD"; return 1; }
+	test -n "$2" ||
+		{ echo "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
+		echo "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
+		return 2; }
 
-    test "$(printf %s $- | sed s/r//)" = $- ||
-		{ echo 'Restricted shell, cannot change PATH'; return 2; }
+	pathvar=$1
+	shift
 
-	test -d "$1" ||
-		{ echo "PATH_TO_ADD not a directory"; return 3; }
+	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
+		{ echo 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
 
-	test "$(printf %s "$1" | sed s/://)" = "$1" ||
-		{ echo 'Cannot add path with colon'; return 4; }
+	if [ "$pathvar" = "PATH" ]; then
+		test "${-#*r}" = $- ||
+			{ echo 'Restricted shell, cannot change PATH'; return 4; }
+	fi
 
-    norm_path=$(printf %s "$PATH" | head -n 1 | sed 's|/\+|/|g; s|/$//') # ensure one line, deduplicate slashes, trim trailing
-    norm_path_to_add=$(printf %s "$1" | head -n 1 | sed 's|/\+|/|g; s|/$//') # ensure one line, deduplicate slashes, trim trailing
-	norm_path=$(printf %s "$norm_path" | sed "s/$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<<- 'EOF'
-		# escape BRE meta-characters
-		s/\\/\\./g # backslash first
-		s/\./\\./g
-		s/\^/\\^/g
-		s/\$/\\$/g
-		s/\*/\\*/g
-		s/\[/\\[/g
-		s|/|\\/|g # escape delimiter for outer sed
-	EOF
-	)//g") # remove all instances of PATH_TO_ADD from PATH
-	norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
-	PATH=$norm_path:$norm_path_to_add # append with colon
-} && export -f pathappend
+	path_prepend_error=0
+
+	# Thanks Stephane
+	code="set -- dummy"
+	n=$#
+	while [ "$n" -gt 0 ]; do
+		code="$code \"\${$n}\""
+		n=$((n - 1))
+	done
+	eval "$code"
+
+	while shift; [ $# -gt 0 ]; do
+		norm_path_to_add=$1
+
+		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
+			{ echo 'Cannot add path with colon'; path_prepend_error=1; continue; }
+
+		test -d "$norm_path_to_add" ||
+			{ echo "path_to_add ('$norm_path_to_add') not a directory"; path_prepend_error=1; continue; }
+
+		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
+		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
+		exec 3<<- 'EOF'
+			# escape BRE meta-characters
+			s/\\/\\./g # backslash first
+			s/\./\\./g
+			s/\^/\\^/g
+			s/\$/\\$/g
+			s/\*/\\*/g
+			s/\[/\\[/g
+			s|/|\\/|g # escape delimiter for outer sed
+		EOF
+		norm_path=$(printf %s "$norm_path" | sed "s/:$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<&3)://g") # remove all instances of PATH_TO_ADD from PATH
+		exec 3<&-
+		norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
+		eval "$pathvar=\$norm_path_to_add\${norm_path:+:\$norm_path}" # prepend with colon
+	done
+	return $path_prepend_error
+}
+
+pathvarappend () {
+	# appending paths to pathvar denoted by the expansion of the PATHVAR parameter
+	# if it's already in the PATH, move it to the end
+	# POSIX compliant version
+
+	test -n "$2" ||
+		{ echo "Usage: pathappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
+		echo "Example: pathappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
+		return 2; }
+
+	pathvar=$1
+
+	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
+		{ echo 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
+
+	if [ "$pathvar" = "PATH" ]; then
+		test "${-#*r}" = $- ||
+			{ echo 'Restricted shell, cannot change PATH'; return 4; }
+	fi
+
+	path_append_error=0
+
+	while shift; [ $# -gt 0 ]; do
+		norm_path_to_add=$1
+
+		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
+			{ echo 'Cannot add path with colon'; path_append_error=1; continue; }
+
+		test -d "$norm_path_to_add" ||
+			{ echo "path_to_add ('$norm_path_to_add') not a directory"; path_append_error=1; continue; }
+
+		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
+		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
+		exec 3<<- 'EOF'
+			# escape BRE meta-characters
+			s/\\/\\./g # backslash first
+			s/\./\\./g
+			s/\^/\\^/g
+			s/\$/\\$/g
+			s/\*/\\*/g
+			s/\[/\\[/g
+			s|/|\\/|g # escape delimiter for outer sed
+		EOF
+		norm_path=$(printf %s "$norm_path" | sed "s/:$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<&3)://g") # remove all instances of PATH_TO_ADD from PATH
+		exec 3<&-
+		norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
+		eval "$pathvar=\${norm_path:+\$norm_path:}\$norm_path_to_add" # append with colon
+	done
+	return $path_append_error
+}
+
+path_append () {
+	pathvarappend PATH "$@"
+}
 
 ld_lib_path_append () {
-	# just works, posix compliant
-    NORM_PATH=":${PATH}:"
-    NORM_PATH="$(printf '%s' "${NORM_PATH}" | sed 's/:+/:/g')"
-	# TODO: Handle Slashes
-    NORM_PATH_TO_ADD=":${1}:"
-    NORM_PATH_TO_ADD="$(printf '%s' "${NORM_PATH_TO_ADD}" | sed 's/::/:/g' | sed 's/::/:/g')"
-    if [ "$(printf '%s' "${-}" | sed 's/r//')" = "${-}" ] && [ -d "${1}" ] && [ "$(printf '%s' "${NORM_PATH}" | sed "s/$(printf '%s' "${NORM_PATH_TO_ADD}" | awk '{gsub("\x2f", "\x5c\x2f"); print $0}')//")" = "${NORM_PATH}" ]; then
-        PATH="${PATH:+"${PATH%:}"}${NORM_PATH_TO_ADD%:}"
-    fi
-} && export -f ld_lib_path_append
+	pathvarappend LD_LIBRARY_PATH "$@"
+}
 
+cdpath_append () {
+	pathvarappend CDPATH "$@"
+}
+
+path_prepend () {
+	pathvarprepend PATH "$@"
+}
+
+ld_lib_path_prepend () {
+	pathvarprepend LD_LIBRARY_PATH "$@"
+}
+
+cdpath_prepend () {
+	pathvarprepend CDPATH "$@"
+}
 
 # shellcheck disable=SC2155
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -95,28 +180,25 @@ export USER42="tischmid"
 export EMAIL42="timo42@proton.me"
 export MAIL="timo42@proton.me"
 
-# export LANG="en_US.UTF-8"
-# export LC_ALL="en_US.UTF-8"
-
 export GOPATH="$HOME/go"
 
 ld_lib_path_append "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 export LD_LIBRARY_PATH
 
-pathappend "/bin"
-pathappend "/sbin"
-pathappend "/usr/bin"
-pathappend "/usr/sbin"
-pathappend "/usr/local/bin"
-pathappend "/usr/lcoal/sbin"
-pathappend "/usr/local/games"
-pathappend "/usr/games"
-pathappend "/snap/bin"
-pathappend "${HOME}/bin"
-pathappend "${HOME}/.local/bin"
-pathappend "${HOME}/.local/include"
-pathappend "${HOME}/.brew/bin"
-pathappend "${GOPATH}/bin"
+path_prepend "/bin" \
+	"/sbin" \
+	"/usr/bin" \
+	"/usr/sbin" \
+	"/usr/local/bin" \
+	"/usr/lcoal/sbin" \
+	"/usr/local/games" \
+	"/usr/games" \
+	"/snap/bin" \
+	"${HOME}/bin" \
+	"${HOME}/.local/bin" \
+	"${HOME}/.local/include" \
+	"${HOME}/.brew/bin" \
+	"${GOPATH}/bin"
 export PATH
 
 # add cargo bin to path
@@ -130,7 +212,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 # shellcheck disable=SC1091
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-######################## More or less shell specific END #####################
+####################### More or less shell specific END ########################
 
 picom &
 
@@ -139,3 +221,5 @@ while true ; do
 	dwm 2>>/home/tosuman/.xinit.log 1>&2
 	sleep 0.5
 done
+
+# ex: set ts=4 sw=4 ft=sh
