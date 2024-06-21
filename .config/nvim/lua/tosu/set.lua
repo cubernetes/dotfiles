@@ -38,7 +38,7 @@ vim.opt.listchars = 'tab:> ,trail:-'
 
 vim.opt.updatetime = 50
 
-vim.opt.colorcolumn = '80'
+-- vim.opt.colorcolumn = '80'
 
 vim.opt.paste = false
 vim.opt.splitright = false

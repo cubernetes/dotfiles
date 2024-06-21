@@ -11,17 +11,17 @@ __log () {
 		*) ansi='45;30' ;;
 	esac
 	shift
-	>&2 printf "\033[${ansi}m%s\033[m\n" "$*"
+	>&2 printf "\033[${ansi}m%s\033[m\n" "${*}"
 	unset ansi
 }
 
-err () { __log red "$@"; }
-warn () { __log orange "$@"; }
-info () { __log blue "$@"; }
-good () { __log green "$@"; }
+err () { __log red "${@}"; }
+warn () { __log orange "${@}"; }
+info () { __log blue "${@}"; }
+good () { __log green "${@}"; }
 
 ###################### EXIT WHEN ALREADY SOURCED (posix) #######################
-[ -n "${BASHRC_SOURCED}" ] && { warn ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal."; return 1; }
+[ -n "${BASHRC_SOURCED}" ] && { __log red ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal."; return 1; }
 BASHRC_SOURCED='1'
 
 ################################## BASH RESET ##################################
@@ -34,7 +34,7 @@ IFS='
 # the actual unset builtin, with which we can unset the unalias builtin,
 # and then unalias everything.
 POSIXLY_CORRECT='1'
-__COMMANDS=(builtin unalias unset read printf command exit type tr fc compgen wc sed grep xargs sudo shopt kill ps head awk clear curl wget source check mv mkdir rm rmdir while do done cc gcc clang basename clone42 git alias export pwd docker shift until for in bash sh dash ash ksh zsh top shellcheck watch cmatrix alacritty tmux zellij ssh which date df du case esac crontab ping base64 apt paru pacman yum dnf aptitude yay rpm dpkg env awk apropos help info dirname bc dc break continue unzip zip tar untar gzip gunzip xz unxz base32 cal chattr cfdisk fdisk passwd chroot cmp cron split dd df dir declare diff dircolors dmesg eval complete exec egrep false true fg bg free fold find file gawk groupadd less more cat head tail chmod chown history trap sleep yes useradd adduser addgroup usermod groupdel userdel xxd groups users who w last hash hostname htop ip ifconfig install ifdown ifup jobs killall pkill pgrep klist link ln unlink let local logout logname lsblk lsof pidof lspci lsusb lscpu make mktemp mount umount nc ncat nmap nft iptables ufw nl nslookup open whereis whatis write wall agetty amixer pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex od pushd popd pv pvs lvs vgs rsync screen sed seq wait ftp sftp shift shuf sort uniq su strace sync tee test time trap tr tty ulimit umask unix2dos dos2unix uptime paco francinette cd ls disown whoami reboot systemctl shutdown poweroff set x touch stat cp scp man locate xset kbdrate return cut batcat id ed v vi vim nvim nano skill norminette bat echo if then fi else function PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4 tabs xmodmap lesspipe CDPATH dotconf pomo dp p r q-dig l ll ls ipa wpa_restart preexec precmd)
+__COMMANDS=(builtin unalias unset read printf command exit type tr fc compgen wc sed grep xargs sudo shopt kill ps head awk clear curl wget source check mv mkdir rm rmdir while do done cc gcc clang basename clone42 git alias export pwd docker shift until for in bash sh dash ash ksh zsh top shellcheck watch cmatrix alacritty tmux zellij ssh which date df du case esac crontab ping base64 apt paru pacman yum dnf aptitude yay rpm dpkg env awk apropos help dirname bc dc break continue unzip zip tar untar gzip gunzip xz unxz base32 cal chattr cfdisk fdisk passwd chroot cmp cron split dd df dir declare diff dircolors dmesg eval complete exec egrep false true fg bg free fold find file gawk groupadd less more cat head tail chmod chown history trap sleep yes useradd adduser addgroup usermod groupdel userdel xxd groups users who w last hash hostname htop ip ifconfig install ifdown ifup jobs killall pkill pgrep klist link ln unlink let local logout logname lsblk lsof pidof lspci lsusb lscpu make mktemp mount umount nc ncat nmap nft iptables ufw nl nslookup open whereis whatis write wall agetty amixer pulsemixer ar cmake bzip2 ccrypt chvt column chsh ex od pushd popd pv pvs lvs vgs rsync screen sed seq wait ftp sftp shift shuf sort uniq su strace sync tee test time trap tr tty ulimit umask unix2dos dos2unix uptime paco francinette cd ls disown whoami reboot systemctl shutdown poweroff set x touch stat cp scp man locate xset kbdrate return cut batcat id ed v vi vim nvim nano skill norminette bat echo if then fi else function PROMPT_COMMAND PS0 PS1 PS2 PS3 PS4 tabs xmodmap lesspipe CDPATH dotconf pomo dp p r q-dig l ll ls ipa wpa_restart preexec precmd)
 __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # names that are not alnum
 2>/dev/null \unset -- "${__ALL_COMMANDS[@]}"
 2>/dev/null \unalias -- "${__ALL_COMMANDS[@]}"
@@ -47,20 +47,20 @@ pathvarprepend () {
 	# if it's already in the PATH, move it to the end
 	# POSIX compliant version
 
-	test -n "$2" ||
-		{ echo "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
-		echo "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
+	test $# -ge 2 ||
+		{ info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
+		info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
 		return 2; }
 
 	pathvar=$1
 	shift
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ echo 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
+		{ err 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
 
 	if [ "$pathvar" = "PATH" ]; then
 		test "${-#*r}" = $- ||
-			{ echo 'Restricted shell, cannot change PATH'; return 4; }
+			{ err 'Restricted shell, cannot change PATH'; return 4; }
 	fi
 
 	path_prepend_error=0
@@ -108,19 +108,19 @@ pathvarappend () {
 	# if it's already in the PATH, move it to the end
 	# POSIX compliant version
 
-	test -n "$2" ||
-		{ echo "Usage: pathappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
-		echo "Example: pathappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
+	test $# -ge 2 ||
+		{ info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
+		info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
 		return 2; }
 
 	pathvar=$1
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ echo 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
+		{ err 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
 
 	if [ "$pathvar" = "PATH" ]; then
 		test "${-#*r}" = $- ||
-			{ echo 'Restricted shell, cannot change PATH'; return 4; }
+			{ err 'Restricted shell, cannot change PATH'; return 4; }
 	fi
 
 	path_append_error=0
@@ -292,7 +292,7 @@ function cd () {
 }
 
 function vimw () {
-	[ -z "$1" ] && { echo "Usage: vimw FILE [VIM_ARGS...]"; return 1; }
+	[ -z "$1" ] && { info "Usage: vimw FILE [VIM_ARGS...]"; return 1; }
 	first="$1"
 	shift
 	vi "$@" $(type -P "$first")
@@ -604,7 +604,7 @@ aocload () {
 		-o './in.txt'                                       \
 		-b "session=${AOC_COOKIE}"                          \
 		"https://adventofcode.com/${year}/day/${day}/input" \
-		|| printf '\033[31m%s\033[m' "$(echo 'Error downloading input' | tee './in.txt')"
+		|| printf '\033[31m%s\033[m' "$(err 'Error downloading input' | tee './in.txt')"
 	unset -v -- AOC_COOKIE
 
 	if [ ! -f './solution.py' ]; then

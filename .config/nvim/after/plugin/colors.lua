@@ -9,7 +9,8 @@ function ColorMyPencils(color)
 end
 
 -- For inside
-ColorMyPencils("gruvbox")
+ColorMyPencils("retrobox")
+-- ColorMyPencils("gruvbox")
 -- ColorMyPencils("habamax")
 
 -- For outside
