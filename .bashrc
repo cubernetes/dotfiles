@@ -6,11 +6,11 @@
 ############################### logging (posix) ################################
 __log () {
 	case "${1-}" in
-		red) ansi='41;30' ;;
+		red) ansi='41;30'    ;;
 		orange) ansi='43;30' ;;
-		blue) ansi='44;30' ;;
-		green) ansi='42;30' ;;
-		*) ansi='45;30' ;;
+		blue) ansi='44;30'   ;;
+		green) ansi='42;30'  ;;
+		*) ansi='45;30'      ;;
 	esac
 	shift
 	>&2 printf "\033[${ansi}m%s\033[m\n" "${*}"
