@@ -1,3 +1,5 @@
+# ex: set ts=4 sw=4 ft=sh
+
 # xrandr --setprovideroutputsource 1 0 --setprovideroutputsource 2 0
 
 # Configure Displays
@@ -221,5 +223,3 @@ while true ; do
 	dwm 2>>/home/tosuman/.xinit.log 1>&2
 	sleep 0.5
 done
-
-# ex: set ts=4 sw=4 ft=sh

@@ -1,7 +1,9 @@
+# ex: set ts=4 sw=4 ft=sh
+
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
 
-############################### LOGGING (posix) ################################
+############################### logging (posix) ################################
 __log () {
 	case "${1-}" in
 		red) ansi='41;30' ;;
@@ -15,16 +17,22 @@ __log () {
 	unset ansi
 }
 
-err () { __log red "${@}"; }
-warn () { __log orange "${@}"; }
-info () { __log blue "${@}"; }
-good () { __log green "${@}"; }
+err () { __log red "${@}" ; }
+warn () { __log orange "${@}" ; }
+info () { __log blue "${@}" ; }
+good () { __log green "${@}" ; }
 
-###################### EXIT WHEN ALREADY SOURCED (posix) #######################
-[ -n "${BASHRC_SOURCED}" ] && { __log red ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal."; return 1; }
+############################ utils (thanks rwxrob) #############################
+_path_lookup () { type -P "$1"; } # adapted for bash.
+_have_all () { while [ $# -gt 0 ] ; do [ -x "$(_path_lookup "$1")" ] || return 1 ; shift ; done; }
+_have () { _have_all "$1"; }
+_source_if () { [ -r "$1" ] && . "$1"; }
+
+###################### exit when already sourced (posix) #######################
+[ -n "${BASHRC_SOURCED}" ] && { __log red ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
 BASHRC_SOURCED='1'
 
-################################## BASH RESET ##################################
+################################## bash reset ##################################
 # Set IFS to the default value, <space><tab><newline>
 IFS=' 	
 '
@@ -39,28 +47,29 @@ __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # name
 2>/dev/null \unset -- "${__ALL_COMMANDS[@]}"
 2>/dev/null \unalias -- "${__ALL_COMMANDS[@]}"
 hash -r
+unalias -a
 unset POSIXLY_CORRECT
 
-######################## PATH APPEND & PREPEND (posix) #########################
+######################## path append & prepend (posix) #########################
 pathvarprepend () {
 	# prepending paths to pathvar denoted by the expansion of the PATHVAR parameter
 	# if it's already in the PATH, move it to the end
 	# POSIX compliant version
 
 	test $# -ge 2 ||
-		{ info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
-		info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
-		return 2; }
+		{ info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]" ;
+		info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'" ;
+		return 2 ; }
 
 	pathvar=$1
 	shift
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ err 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
+		{ err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
 
-	if [ "$pathvar" = "PATH" ]; then
+	if [ "$pathvar" = "PATH" ] ; then
 		test "${-#*r}" = $- ||
-			{ err 'Restricted shell, cannot change PATH'; return 4; }
+			{ err 'Restricted shell, cannot change PATH' ; return 4 ; }
 	fi
 
 	path_prepend_error=0
@@ -68,20 +77,20 @@ pathvarprepend () {
 	# Thanks Stephane
 	code='set -- dummy'
 	n=$#
-	while [ "$n" -gt 0 ]; do
+	while [ "$n" -gt 0 ] ; do
 		code="$code \"\${$n}\""
 		n=$((n - 1))
 	done
 	eval "$code"
 
-	while shift; [ $# -gt 0 ]; do
+	while shift ; [ $# -gt 0 ] ; do
 		norm_path_to_add=$1
 
 		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ warn "Cannot add path with colon: $norm_path_to_add"; path_prepend_error=1; continue; }
+			{ warn "Cannot add path with colon: $norm_path_to_add" ; path_prepend_error=1 ; continue ; }
 
 		test -d "$norm_path_to_add" ||
-			{ warn "path_to_add ('$norm_path_to_add') not a directory"; path_prepend_error=1; continue; }
+			{ warn "path_to_add ('$norm_path_to_add') not a directory" ; path_prepend_error=1 ; continue ; }
 
 		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
 		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
@@ -109,30 +118,30 @@ pathvarappend () {
 	# POSIX compliant version
 
 	test $# -ge 2 ||
-		{ info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]";
-		info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'";
-		return 2; }
+		{ info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]"
+		info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'"
+		return 2 ; }
 
 	pathvar=$1
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ err 'Expanded pathvar is not a valid name/variable identifier'; return 3; }
+		{ err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
 
-	if [ "$pathvar" = "PATH" ]; then
+	if [ "$pathvar" = "PATH" ] ; then
 		test "${-#*r}" = $- ||
-			{ err 'Restricted shell, cannot change PATH'; return 4; }
+			{ err 'Restricted shell, cannot change PATH' ; return 4 ; }
 	fi
 
 	path_append_error=0
 
-	while shift; [ $# -gt 0 ]; do
+	while shift ; [ $# -gt 0 ] ; do
 		norm_path_to_add=$1
 
 		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ warn 'Cannot add path with colon'; path_append_error=1; continue; }
+			{ warn 'Cannot add path with colon' ; path_append_error=1 ; continue ; }
 
 		test -d "$norm_path_to_add" ||
-			{ warn "path_to_add ('$norm_path_to_add') not a directory"; path_append_error=1; continue; }
+			{ warn "path_to_add ('$norm_path_to_add') not a directory" ; path_append_error=1 ; continue ; }
 
 		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
 		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
@@ -178,19 +187,19 @@ cdpath_prepend () {
 	pathvarprepend CDPATH "$@"
 }
 
-################################# BASH OPTIONS #################################
+################################# bash options #################################
 shopt -s autocd
 shopt -s extglob
 shopt -s checkwinsize
 
-############################ BASH HISTORY OPTIONS #############################
+############################ bash history options #############################
 shopt -s lithist
 shopt -s cmdhist
 shopt -s histappend
 shopt -s histreedit
 shopt -u histverify
 
-############################# BETTER BASH HISTORY ##############################
+############################# better bash history ##############################
 # readonly BASH_SESSION_NAME="${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}_${__COMMANDS[$(( RANDOM % ${#__COMMANDS[@]}))]}"
 readonly BASH_SESSION_NAME="${$}"
 HISTSIZE='-1'
@@ -203,7 +212,7 @@ HISTCONTROL='ignoreboth'
 history -c
 history -r -- "${REAL_HISTFILE}"
 write_history () {
-	[ -d "${REAL_HISTFILE}" ] || { rm -f -- "$(dirname -- "${REAL_HISTFILE}")" && mkdir -p -- "$(dirname -- "${REAL_HISTFILE}")"; }
+	[ -d "${REAL_HISTFILE}" ] || { rm -f -- "$(dirname -- "${REAL_HISTFILE}")" && mkdir -p -- "$(dirname -- "${REAL_HISTFILE}")" ; }
 	[ -f "${HISTFILE}" ] &&
 		[ -r "${HISTFILE}" ] &&
 		<"${HISTFILE}" 1>/dev/null tee -a -- "${REAL_HISTFILE}" &&
@@ -211,21 +220,22 @@ write_history () {
 } && trap 'write_history' EXIT
 
 ############################# VIM ALIASES (posix) ##############################
-if 1>/dev/null 2>&1 command -v nvim; then
-    alias v='err use vi'
-    alias vi='nvim'
-    alias v='err use vi'
-elif 1>/dev/null 2>&1 command -v vim; then
-    alias v='err use vi'
-    alias vi='vim'
-elif 1>/dev/null 2>&1 command -v nvi; then
-    alias v='err use vi'
-    alias vi='nvi'
-elif 1>/dev/null 2>&1 command -v vi; then
-    alias v='err use vi'
+if _have nvim ; then
+	alias vi="$(_path_lookup nvim)"
+elif _have vim ; then
+	alias vi="$(_path_lookup vim)"
+elif _have nvi ; then
+	alias vi="$(_path_lookup nvi)"
+elif _have vi ; then
+	alias vi="$(_path_lookup vi)"
+elif _have nano ; then
+	alias vi="$(_path_lookup nano)"
 fi
+alias v='err use vi'
+alias vim='err use vi'
+alias nvim='err use vi'
 
-######################## DEFAULT-OPTION ALIASES (posix) ########################
+######################## default-option aliases (posix) ########################
 alias gdb='gdb -q'
 alias tmux='tmux -2'
 alias less='less -SR'
@@ -243,17 +253,16 @@ alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
 alias sudo='sudo ' # trailing space means complete aliases
 alias watch='watch -tcn.1 ' # trailing space means complete aliases
 
-########################## OVERWRITE ALIASES (posix) ###########################
-alias cat='bat'
+########################## overwrite aliases (posix) ###########################
 alias make='compiledb make'
 
-########################## NAVIGATION ALIASES (posix) ##########################
+########################## navigation aliases (posix) ##########################
 alias r='ranger'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
-########################### GENERAL ALIASES (posix) ############################
+########################### general aliases (posix) ############################
 alias open='xdg-open'
 alias dp='declare -p'
 alias wttr='curl -sfkSL wttr.in'
@@ -269,40 +278,53 @@ alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
 alias colors='bash -c "$(curl -sfkSL "https://gist.githubusercontent.com/HaleTom/89ffe32783f89f403bba96bd7bcd1263/raw")"'
-alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-); eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
+alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-) ; eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
 
 ############################### CDPATHS (posix) ################################
-cdpath_prepend              \
-"."                         \
-"${HOME}"                   \
-"${HOME}/onnea"             \
-"${HOME}/42ecole"           \
-"${HOME}/projects"          \
-"${HOME}/projects/aoc"      \
-"${HOME}/42ecole/42cursus"  \
-"${HOME}/projects/aoc/2023" \
+CDPATH="."\
+":${HOME}"\
+":${HOME}/onnea"\
+":${HOME}/42ecole"\
+":${HOME}/projects"\
+":${HOME}/projects/aoc"\
+":${HOME}/42ecole/42cursus"\
+":${HOME}/projects/aoc/2023"
 
 ################################## FUNCTIONS ###################################
-# auto_pushd
-function cd () {
+##################### cd with pushd functionality (posix) ######################
+cd () {
 	command cd "${@}" || return 1
 	pwd="${PWD}"
 	1>/dev/null command cd - || return 1
 	1>/dev/null pushd "${pwd}" || return 1
 }
 
-function vimw () {
-	[ -z "$1" ] && { info "Usage: vimw FILE [VIM_ARGS...]"; return 1; }
+############################## vimw (posix) ###############################
+# Roughly equivalent to vi "$(which "$1")", but also allowing for args after $1
+vimw () {
+	_have vi || { err 'vi missing'; exit 1; }
+
+	[ -z "$1" ] && { info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
 	first="$1"
 	shift
 	vi "$@" $(type -P "$first")
 }
 
-function paruuu () {
-	read -p 'Do system upgrade (Y) or exit (n)' choice
-	if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
-		exit
-	fi
+#################################### paruuu (posix) ####################################
+# Update arch linux system with pacman, paru and ssid whitelist
+# Clears cache and removes orphans. Arguably dangerous.
+# Depends on iw, paru, pacman, rankmirrors, sudo, curl
+paruuu () {
+	_have iw || { err 'iw missing'; exit 1; }
+	_have paru || { err 'paru missing'; exit 2; }
+	_have pacman || { err 'pacman missing'; exit 3; }
+	_have rankmirrors || { err 'rankmirrors missing'; exit 4; }
+	_have sudo || { err 'sudo missing'; exit 5; }
+	_have curl || { err 'curl missing'; exit 6; }
+
+	printf 'Do system upgrade (Y) or exit (n): '
+	read -r choice
+	[ ! "${choice}" = "y" ] && [ ! "${choice}" = "Y" ] && [ -n "${choice}" ] && exit 7
 	ssid="$(iw dev wlan0 link |
 			grep SSID |
 			sed -e 's/[[:blank:]]*SSID: //'       \
@@ -330,10 +352,9 @@ function paruuu () {
 		&& [ ! "${ssid-}" = "Silmaril 4 (2.4)" ]  \
 		&& [ ! "${ssid-}" = "ZorgatiHome Guest" ] \
 	&& : ; then
-		read -p "[31mYou're connected to '${ssid-}', update anyway (Y|n)?[m" choice
-		if [ ! "${choice}" = "y" -a ! "${choice}" = "Y" -a -n "${choice}" ]; then
-			exit
-		fi
+		printf "\033[31mYou're connected to '${ssid}', update anyway (Y|n)?: \033[m"
+		read -r choice
+		[ ! "${choice}" = "y" ] && [ ! "${choice}" = "Y" ] && [ -n "${choice}" ] && exit 8
 	fi
 	time (
 		printf '\033[30;41m%s\033[m\n' 'Cache credentials for sudo:'                                          \
@@ -352,14 +373,19 @@ function paruuu () {
 			&& yes | paru -Syyu --devel --noconfirm                                                           \
 			&& printf '\033[30;41m%s\033[m\n' 'pacman -Qtdq | pacman -Rns -'                                  \
 			&& { pacman -Qtdq | 2>/dev/null sudo pacman --noconfirm -Rns -                                    \
-			|| printf '\033[30;42m%s\033[m\n' 'No pacman orphan packages :)!'; }                              \
+			|| printf '\033[30;42m%s\033[m\n' 'No pacman orphan packages :)!' ; }                             \
 			&& yes | paru -Scc -d                                                                             \
 		&& printf '\n\033[30;42m%s\033[m\n' '###### Done without error ######'                                \
 		|| printf '\n\033[30;41m%s\033[m\n' '###### Some error occured! ######'
 	)
 }
 
-function skill () {
+################################ skill (posix) #################################
+# Depends on pgrep, ps
+skill () {
+	_have pgrep || { err 'pgrep missing'; return 1; }
+	_have ps || { err 'ps missing'; return 2; }
+
 	exit_status=0
 	while [ -n "${1-}" ] ; do
 		# pids="$(ps -eo pid,cmd)"
@@ -369,7 +395,7 @@ function skill () {
 			pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 		}
 		pgrep -f -- "$1" | sudo xargs -r kill -9 || {
-			if [ $? -eq 1 ]; then
+			if [ $? -eq 1 ] ; then
 				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root:"
 				pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 			fi
@@ -380,84 +406,129 @@ function skill () {
 	return $exit_status
 }
 
-function wpa_restart () {
+############################# wpa_restart (posix) ##############################
+# Depends on wpa_supplicant
+wpa_restart () {
+	_have wpa_supplicant || { err 'wpa_supplicant missing'; return 1; }
+
 	skill wpa_supplicant
-	sudo wpa_supplicant -B -i wlan0 -c /etc/wpa_supplicant/wpa_supplicant.conf
+	sudo wpa_supplicant -B -i "${1:-wlan0}" -c /etc/wpa_supplicant/wpa_supplicant.conf
 }
 
-function bat () {
-	1>/dev/null 2>&1 command -v batcat && { $(type -P batcat) "${@}"; return 0; }
-	1>/dev/null 2>&1 command -v bat && { $(type -P bat) "${@}"; return 0; }
+##################################### bat ######################################
+bat () {
+	1>/dev/null 2>&1 command -v batcat && { $(type -P batcat) "${@}" ; return 0 ; }
+	1>/dev/null 2>&1 command -v bat && { $(type -P bat) "${@}" ; return 0 ; }
 	$(type -P cat) "${@}"
 }
 
-function take () {
-    mkdir -p -- "$1" &&
-       cd -P -- "$1" ||
-		return 1;
+################################# take (posix) #################################
+take () {
+	mkdir -p -- "$1" &&
+		cd -P -- "$1" ||
+		return 1 ;
 }
 
-function norminette () {
+################################## norminette ##################################
+# Depends on norminette
+norminette () {
 	local vers
 	local newst
+
+	_have norminette || { err 'norminette missing'; return 1; }
 
 	vers="$($(type -P norminette) -v | cut -d" " -f2)"
 	newst='3.3.55'
 	if [ ! "${vers-}" = "${newst-}" ] ; then
 		printf "%s\n%b\n" "Norminette v${vers-} instead of v${newst-} detected."\
-                          '\033[31mPlease up-/downgrade\033[m'
+			'\033[31mPlease up-/downgrade\033[m'
 	fi
 	$(type -P norminette) -R CheckForbiddenSourceHeader "${@}"
 }
 
-function __norm () {
-	local _pwd
+################################ __norm (posix) ################################
+# Depends on git, norminette
+__norm () {
+	_have git || { err 'git missing'; return 1; }
+	_have norminette || { err 'norminette missing'; return 2; }
 
+	__pwd="$(pwd -P)"
+	[ -n "${__pwd}" ] && [ -z "${__pwd##${HOME-}/42/42cursus/*}" ] || { return 1 ; }
+	1>/dev/null 2>&1 git status || { return 2 ; }
+	1>/dev/null 2>&1 norminette && printf ' \033[92m%s\033[m' "[Norm: OK]" || printf ' \033[101;37m%s\033[m' "[䝝誒 ‼ NORM ‼ 屌誒]"
 	return 0
-	_pwd="$(pwd -P)"
-	[ -n "${_pwd-}" ] && [ -z "${_pwd##${HOME-}/42/42cursus/*}" ] || { return 1; }
-	1>/dev/null 2>&1 git status || { return 2; }
-    1>/dev/null 2>&1 norminette && printf ' \033[92m%s\033[m' "[Norm: OK]" || printf ' \033[101;37m%s\033[m' "[䝝誒 ‼ NORM ‼ 屌誒]"
-    return 0
 }
 
-function ft_check () {
-    # Set params
-    URL="${1}"
-    DIR="/tmp/tmp_repo_$(date +%s)"
+############################### ft_check (posix) ###############################
+# Depends on git, norminette
+ft_check () {
+	# Set params
+	URL="${1}"
+	DIR="/tmp/tmp_repo_$(date +%s)"
 
-    # If no URL, get it from current repo
-    if [ -z "${URL-}" ] ; then
-        URL="$(git remote get-url origin)"
-    fi
+	_have git || { err 'git missing'; return 1; }
+	_have norminette || { err 'norminette missing'; return 2; }
 
-    # Clone in temp folder
-    git clone --quiet "${URL}" "${DIR}"
+	# If no URL, get it from current repo
+	if [ -z "${URL-}" ] ; then
+		URL="$(git remote get-url origin)"
+	fi
 
-    # Only proceed if clone success
-    if [ -d "${DIR}" ] ; then
-        # Check the norm and print beautiful message
-        norminette -R CheckForbiddenSourceHeader "${DIR}" && printf '\033[30;102m%s\033[m\n' "Norminette success" || printf '\033[30;101m%s\033[m\n' "Norminette fail!!!"
+	# Clone in temp folder
+	git clone --quiet "${URL}" "${DIR}"
 
-            # Remove temp folder
-            rm -rf -- "${DIR}"
-        else
-            printf '\033[30;101m%s\033[m\n' "Could not clone the repo"
-    fi
+	# Only proceed if clone success
+	if [ -d "${DIR}" ] ; then
+		# Check the norm and print beautiful message
+		norminette -R CheckForbiddenSourceHeader "${DIR}" && printf '\033[30;102m%s\033[m\n' "Norminette success" || printf '\033[30;101m%s\033[m\n' "Norminette fail!!!"
+
+			# Remove temp folder
+			rm -rf -- "${DIR}"
+		else
+			printf '\033[30;101m%s\033[m\n' "Could not clone the repo"
+	fi
 }
 
-function clone42 () {
-    folder="${1}"
-    repo_url="${2}"
+############################### clone42 (posix) ################################
+# Depends on git, norminette
+clone42 () {
+	folder="${1}"
+	repo_url="${2}"
 
-    git clone --quiet "${repo_url}" "${folder}" && {
-        cd "${folder}";
-		norminette -R CheckForbiddenSourceHeader ".";
-	} || { printf '%s\n' "Could not clone repo!"; }
+	_have git || { err 'git missing'; return 1; }
+	_have norminette || { err 'norminette missing'; return 2; }
+
+	git clone --quiet "${repo_url}" "${folder}" && {
+		cd "${folder}"
+		norminette -R CheckForbiddenSourceHeader "."
+	} || { printf '%s\n' "Could not clone repo!" ; }
 }
 
 ################################# ENVIRONMENT ##################################
 export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME-}"/.ssh/config'
+
+export LANG='en_US.UTF-8'
+export USER="${USER:-$(whoami)}"
+
+export EDITOR="$({	type -P nvim ||
+					type -P vim  ||
+					type -P vi   ||
+					type -P nvi  ||
+					type -P hx   ||
+					type -P nano ||
+					type -P ex   ||
+					type -P ed ; } 2>/dev/null)"
+export VISUAL="${EDITOR-}"
+export SUDO_EDITOR="${EDITOR-}"
+
+export MANPAGER='nvim +Man!'
+# export MANPAGER='less -X'
+
+export BAT_THEME='gruvbox-dark'
+# export BAT_THEME='gruvbox-light'
+
+[ -n "${DISPLAY-}" ] || warn 'DISPLAY not set'
+
 if [ ! "${TERM-}" = "linux" ] ; then
 	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
 		export TERM='xterm-256color'
@@ -472,23 +543,6 @@ if [ ! "${TERM-}" = "linux" ] ; then
 	fi
 fi
 
-export EDITOR="$({ type -P nvim ||
-                   type -P vim  ||
-                   type -P vi   ||
-                   type -P nvi  ||
-                   type -P hx   ||
-                   type -P nano ||
-                   type -P ex   ||
-                   type -P ed; } 2>/dev/null)"
-export VISUAL="${EDITOR-}"
-export SUDO_EDITOR="${EDITOR-}"
-export MANPAGER='nvim +Man!'
-[ -n "${DISPLAY-}" ] || warn 'DISPLAY not set'
-
-################################# PROMPT STUFF #################################
-# If bash runs in posix mode, if should be `cut -c2-' instead
-# PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
-
 ################################ BASH PRE-EXEC #################################
 if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
 	curl -sfkSL "https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh" -o "${HOME}"/.bash-preexec.sh
@@ -497,7 +551,7 @@ fi
 . "${HOME}"/.bash-preexec.sh
 
 preexec() {
-	[ -d "${HISTDIR}" ] || { mkdir -p -- "${HISTDIR}" || warn "Can't create directory: ${HISTDIR}"; }
+	[ -d "${HISTDIR}" ] || { mkdir -p -- "${HISTDIR}" || warn "Can't create directory: ${HISTDIR}" ; }
 	history -a
 	TIMESTAMP_BEFORE="$(date +%s)"
 }
@@ -521,6 +575,7 @@ precmd() {
 	fi
 }
 
+#################################### PROMPT ####################################
 GIT_PS1_SHOWDIRTYSTATE='1'
 GIT_PROMPT='1'
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT-}" -eq "1" ] ; then
@@ -535,8 +590,8 @@ _PS1_SSH="$(
 _PS1_TMUX="$(
 	set | grep -sq ^TMUX_PANE && printf "@\[\033[35m\]%s\[\033[m\]" "tmux"
 )"
-[ -n "${_PS1_SSH-}" ] && _PS1_HOST_CLR='\[\033[30;42m\]' || \
-                         _PS1_HOST_CLR='\[\033[32m\]'
+[ -n "${_PS1_SSH-}" ] &&	_PS1_HOST_CLR='\[\033[30;42m\]' || \
+							_PS1_HOST_CLR='\[\033[32m\]'
 _PS1_1="${_PS1_USER-}"
 _PS1_1="${_PS1_1-}@${_PS1_HOST_CLR-}"
 _PS1_1="${_PS1_1-}\h\[\033[m\]"
@@ -544,60 +599,74 @@ _PS1_1="${_PS1_1-}${_PS1_SSH-}${_PS1_TMUX-} "
 _PS1_1="${_PS1_1-}${_PS1_CWD_CLR-}"
 _PS1_1="${_PS1_1-}[\w]\${TOOK_STRING-}"
 _PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
-_PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
+# _PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
+_PS1_2='\[\033[m\]\[\033[36m\]\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 
-if [ -f "${HOME}"/git-prompt.sh ] && [ -r "${HOME}"/git-prompt.sh ] && \
-                                     [ "${GIT_PROMPT-}" -eq "1" ] ; then
-    . "${HOME}"/git-prompt.sh
-    PS1="${_PS1_1-}${_PS1_GIT-}${_PS1_2-}"
+if [ -f "${HOME}"/git-prompt.sh ] &&	[ -r "${HOME}"/git-prompt.sh ] && \
+										[ "${GIT_PROMPT-}" -eq "1" ] ; then
+	. "${HOME}"/git-prompt.sh
+	PS1="${_PS1_1-}${_PS1_GIT-}${_PS1_2-}"
 else
-    PS1="${_PS1_1-}${_PS1_2-}"
+	PS1="${_PS1_1-}${_PS1_2-}"
 fi
 
+# Autoclear
+# If bash runs in posix mode, if should be `cut -c2-' instead
+# PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
+
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
-# unset PROMPT_COMMAND PS0; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
+# unset PROMPT_COMMAND PS0 ; PS1='\033[94m\u\033[37m@\033[32m\h\033[37m@\033[33m$(basename -- "$(tty)") \033[36m\w \033[35m\$\033[m '
+
+# Show shell level
+# PS1='[${SHLVL}] '"${PS1}"
 
 # ##################################### AOC ######################################
 AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
 alias aos='< in.txt python3 solution.py'
-alias aot='< test.txt printf '\033[34m'; python3 solution.py; printf '\033[m''
-alias aoc='aot; echo; aos'
+alias aot='< test.txt printf '\033[34m' ;  python3 solution.py ; printf '\033[m''
+alias aoc='aot ; echo ; aos'
 
+################################### aocload ####################################
+# Depends on curl, tmux, git
 aocload () {
 	local dir
 	local year
 	local day
 
+	_have curl || { err 'curl missing'; exit 1; }
+	_have tmux || { err 'tmux missing'; exit 2; }
+	_have git || { err 'git missing'; exit 3; }
+
 	this_year="$(date "+%Y")"
 	this_day="$(date "+%d" | sed -e 's/^0//')"
-    if [ -n "${1}" ]; then
-		if [ -z "${2}" ]; then
+	if [ -n "${1}" ] ; then
+		if [ -z "${2}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected one more parameter (day)'
 			return 1
 		fi
-		if [ -n "${3}" ]; then
+		if [ -n "${3}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected exactly 2 parameters (year day)'
 			return 2
 		fi
 		year="${1}"
 		day="${2}"
-		if [ "${day}" -lt "1" -o "${day}" -gt "25" ]; then
+		if [ "${day}" -lt "1" -o "${day}" -gt "25" ] ; then
 			printf '\033[31m%s\033[m\n' 'Day not in range 1..25'
 			return 3
 		fi
-		if [ "${year}" -lt "2015" -o "${year}" -gt "${this_year}" ]; then
+		if [ "${year}" -lt "2015" -o "${year}" -gt "${this_year}" ] ; then
 			printf '\033[31m%s\033[m\n' "Year not in range 2015..${this_year}"
 			return 4
 		fi
-    else
+	else
 		year="${this_year}"
 		day="${this_day}"
-    fi
+	fi
 	dir="${AOC_DIR}/${year}/${day}"
 
 	mkdir -p -- "${dir}" || return 5
 	cd -P -- "${dir}" || return 6
-	2>/dev/null 1>/dev/null git init "${AOC_DIR}" || true
+	2>/dev/null 1>&2 git init "${AOC_DIR}" || true
 
 	. "${AOC_DIR}/.env"
 	curl -sfkSL                                             \
@@ -607,7 +676,7 @@ aocload () {
 		|| printf '\033[31m%s\033[m' "$(err 'Error downloading input' | tee './in.txt')"
 	unset -v -- AOC_COOKIE
 
-	if [ ! -f './solution.py' ]; then
+	if [ ! -f './solution.py' ] ; then
 		cat <<- TEMPLATE >> './solution.py'
 			#!/usr/bin/env python3
 
@@ -662,23 +731,19 @@ aocload () {
 	tmux send-keys "nvim './solution.py'" ENTER
 }
 
-############################### GENERAL SETTINGS ###############################
+############################## TERMINAL SETTINGS ###############################
 tabs -4
 set -o emacs
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+_have lesspipe && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Key Repeat/Delay Rate
-2>/dev/null xset r rate 200 60
-# sudo kbdrate --rate=30.0 --delay=250
+_have xset && 2>/dev/null xset r rate 200 60
+# _have kbdrate && sudo kbdrate --rate=30.0 --delay=250
 
 # Disable bell
-2>/dev/null xset -b
+_have xset && 2>/dev/null xset -b
 
-if [ -f "${HOME}"/.userbashrc ]; then . "${HOME}"/.userbashrc; fi
-
-# PS1='[${SHLVL}] '"${PS1}"
-
-# export BAT_THEME='gruvbox-light'
-
-# ex: set ts=4 sw=4 ft=sh
+################################# COMPLETIONS ##################################
 complete -F _command vimw
+
+_source_if "${HOME}/.userbashrc"
