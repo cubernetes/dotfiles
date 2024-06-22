@@ -54,7 +54,7 @@ echo "Successfully downloaded $target_file, size \$(wc -c < ./$(squote_escape "$
 GET_FILE_VIA_TOR
 )"
 echo "Run at your own risk."
-printf '\033[31m%s\033[m\n' "curl $link|sh"
+printf '\033[31m%s\033[m\n' "curl -sfkSL $link|sh"
 printf %s "$link" | qr
 
 echo "Serving file via: $tor_host/$(urlencode "$target_file")"

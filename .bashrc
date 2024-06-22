@@ -4,33 +4,34 @@
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
 
-############################### logging (posix) ################################
-__log () {
+############################ utils (thanks rwxrob) #############################
+_path_lookup () { type -P "$1" ; } # adapted for bash.
+_have_all () { while [ $# -gt 0 ] ; do [ -x "$(_path_lookup "$1")" ] || return 1 ; shift ; done ; }
+_have () { _have_all "$1" ; }
+_source_if () { [ -f "$1" ] && [ -r "$1" ] && . "$1" ; }
+
+# TODO: Create ~/.local/bin directory and add ~/.local/bin to PATH
+# Add some basic scripts, like log.log, etc.
+################################ logging utils #################################
+log.log () {
 	case "${1-}" in
-		red) ansi='41;30'    ;;
-		orange) ansi='43;30' ;;
-		blue) ansi='44;30'   ;;
-		green) ansi='42;30'  ;;
-		*) ansi='45;30'      ;;
+		red) __ansi='41;30'    ;;
+		orange) __ansi='43;30' ;;
+		blue) __ansi='44;30'   ;;
+		green) __ansi='42;30'  ;;
+		*) __ansi='45;30'      ;;
 	esac
 	shift
-	>&2 printf "\033[${ansi}m%s\033[m\n" "${*}"
-	unset ansi
+	1>&2 printf "\033[${__ansi}m%s\033[m\n" "${*}"
+	unset __ansi
 }
-
-err () { __log red "${@}" ; }
-warn () { __log orange "${@}" ; }
-info () { __log blue "${@}" ; }
-good () { __log green "${@}" ; }
-
-############################ utils (thanks rwxrob) #############################
-_path_lookup () { type -P "$1"; } # adapted for bash.
-_have_all () { while [ $# -gt 0 ] ; do [ -x "$(_path_lookup "$1")" ] || return 1 ; shift ; done; }
-_have () { _have_all "$1"; }
-_source_if () { [ -f "$1" ] && [ -r "$1" ] && . "$1"; }
+log.err () { log.log red "${@}" ; }
+log.warn () { log.log orange "${@}" ; }
+log.info () { log.log blue "${@}" ; }
+log.good () { log.log green "${@}" ; }
 
 ###################### exit when already sourced (posix) #######################
-[ -n "${BASHRC_SOURCED}" ] && { __log red ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
+[ -n "${BASHRC_SOURCED}" ] && { log.err ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
 BASHRC_SOURCED='1'
 
 ################################## bash reset ##################################
@@ -58,19 +59,19 @@ pathvarprepend () {
 	# POSIX compliant version
 
 	test $# -ge 2 ||
-		{ info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]" ;
-		info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'" ;
+		{ log.info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]" ;
+		log.info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'" ;
 		return 2 ; }
 
 	pathvar=$1
 	shift
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
+		{ log.err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
 
 	if [ "$pathvar" = "PATH" ] ; then
 		test "${-#*r}" = $- ||
-			{ err 'Restricted shell, cannot change PATH' ; return 4 ; }
+			{ log.err 'Restricted shell, cannot change PATH' ; return 4 ; }
 	fi
 
 	path_prepend_error=0
@@ -88,10 +89,10 @@ pathvarprepend () {
 		norm_path_to_add=$1
 
 		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ warn "Cannot add path with colon: $norm_path_to_add" ; path_prepend_error=1 ; continue ; }
+			{ log.warn "Cannot add path with colon: $norm_path_to_add" ; path_prepend_error=1 ; continue ; }
 
 		test -d "$norm_path_to_add" ||
-			{ warn "path_to_add ('$norm_path_to_add') not a directory" ; path_prepend_error=1 ; continue ; }
+			{ log.warn "path_to_add ('$norm_path_to_add') not a directory" ; path_prepend_error=1 ; continue ; }
 
 		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
 		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
@@ -119,18 +120,18 @@ pathvarappend () {
 	# POSIX compliant version
 
 	test $# -ge 2 ||
-		{ info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]"
-		info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'"
+		{ log.info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]"
+		log.info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'"
 		return 2 ; }
 
 	pathvar=$1
 
 	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
+		{ log.err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
 
 	if [ "$pathvar" = "PATH" ] ; then
 		test "${-#*r}" = $- ||
-			{ err 'Restricted shell, cannot change PATH' ; return 4 ; }
+			{ log.err 'Restricted shell, cannot change PATH' ; return 4 ; }
 	fi
 
 	path_append_error=0
@@ -139,10 +140,10 @@ pathvarappend () {
 		norm_path_to_add=$1
 
 		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ warn 'Cannot add path with colon' ; path_append_error=1 ; continue ; }
+			{ log.warn 'Cannot add path with colon' ; path_append_error=1 ; continue ; }
 
 		test -d "$norm_path_to_add" ||
-			{ warn "path_to_add ('$norm_path_to_add') not a directory" ; path_append_error=1 ; continue ; }
+			{ log.warn "path_to_add ('$norm_path_to_add') not a directory" ; path_append_error=1 ; continue ; }
 
 		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
 		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
@@ -232,9 +233,9 @@ elif _have vi ; then
 elif _have nano ; then
 	alias vi="$(_path_lookup nano)"
 fi
-alias v='err use vi'
-alias vim='err use vi'
-alias nvim='err use vi'
+alias v='log.err use vi'
+alias vim='log.err use vi'
+alias nvim='log.err use vi'
 
 ######################## default-option aliases (posix) ########################
 alias gdb='gdb -q'
@@ -294,6 +295,25 @@ CDPATH="."\
 ":${HOME}/projects/aoc/2023"
 
 ################################## FUNCTIONS ###################################
+################################# vix (posix) ##################################
+vix () {
+	_have vi || { log.err 'vi missing' ; exit 1 ; }
+
+	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [VIM_ARGS...]" ; return 1 ; }
+
+	file="${1}"
+	shift
+	[ -e "$file" ] && [ ! -f "$file" ] && { log.err "File '$file' exists and is not a regular file" ; return 2 ; }
+	if [ ! -e "$file" ] ; then
+		printf "#! /bin/sh -\n\n\n" > "$file" || { log.err "Can't write to file '$file'" ; return 3 ; }
+		set -- "$@" +3
+	fi
+	if [ ! -x "$file" ] ; then
+		chmod +x "$file" || { log.err "Can't chmod +x '$file'" ; return 4 ; }
+	fi
+	vi "$@" "$file"
+}
+
 ##################### cd with pushd functionality (posix) ######################
 cd () {
 	command cd "${@}" || return 1
@@ -305,12 +325,13 @@ cd () {
 ############################## vimw (posix) ###############################
 # Roughly equivalent to vi "$(which "$1")", but also allowing for args after $1
 vimw () {
-	_have vi || { err 'vi missing'; exit 1; }
+	_have vi || { log.err 'vi missing' ; exit 1 ; }
 
-	[ -z "$1" ] && { info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
+	[ -z "$1" ] && { log.info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
+
 	first="$1"
 	shift
-	vi "$@" $(type -P "$first")
+	vi "$@" "$(type -P "$first")"
 }
 
 #################################### paruuu (posix) ####################################
@@ -318,12 +339,12 @@ vimw () {
 # Clears cache and removes orphans. Arguably dangerous.
 # Depends on iw, paru, pacman, rankmirrors, sudo, curl
 paruuu () {
-	_have iw || { err 'iw missing'; exit 1; }
-	_have paru || { err 'paru missing'; exit 2; }
-	_have pacman || { err 'pacman missing'; exit 3; }
-	_have rankmirrors || { err 'rankmirrors missing'; exit 4; }
-	_have sudo || { err 'sudo missing'; exit 5; }
-	_have curl || { err 'curl missing'; exit 6; }
+	_have iw || { log.err 'iw missing' ; exit 1 ; }
+	_have paru || { log.err 'paru missing' ; exit 2 ; }
+	_have pacman || { log.err 'pacman missing' ; exit 3 ; }
+	_have rankmirrors || { log.err 'rankmirrors missing' ; exit 4 ; }
+	_have sudo || { log.err 'sudo missing' ; exit 5 ; }
+	_have curl || { log.err 'curl missing' ; exit 6 ; }
 
 	printf 'Do system upgrade (Y) or exit (n): '
 	read -r choice
@@ -345,6 +366,7 @@ paruuu () {
 		&& [ ! "${ssid-}" = "Free Wifi" ]         \
 		&& [ ! "${ssid-}" = "DS_JD-Tree" ]        \
 		&& [ ! "${ssid-}" = "Nichts 2,4" ]        \
+		&& [ ! "${ssid-}" = "WLAN-17KA15" ]       \
 		&& [ ! "${ssid-}" = "\xe2\x88\x9e" ]      \
 		&& [ ! "${ssid-}" = $'\xe2\x88\x9e' ]     \
 		&& [ ! "${ssid-}" = "Pink Flamingo" ]     \
@@ -386,8 +408,8 @@ paruuu () {
 ################################ skill (posix) #################################
 # Depends on pgrep, ps
 skill () {
-	_have pgrep || { err 'pgrep missing'; return 1; }
-	_have ps || { err 'ps missing'; return 2; }
+	_have pgrep || { log.err 'pgrep missing' ; return 1 ; }
+	_have ps || { log.err 'ps missing' ; return 2 ; }
 
 	exit_status=0
 	while [ -n "${1-}" ] ; do
@@ -402,8 +424,8 @@ skill () {
 				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root (sudo):"
 				pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 			else
-				info Cancelled
-				return 3;
+				log.info Cancelled
+				return 3 ;
 			fi
 			exit_status=1
 		}
@@ -415,7 +437,7 @@ skill () {
 ############################# wpa_restart (posix) ##############################
 # Depends on wpa_supplicant
 wpa_restart () {
-	_have wpa_supplicant || { err 'wpa_supplicant missing'; return 1; }
+	_have wpa_supplicant || { log.err 'wpa_supplicant missing' ; return 1 ; }
 
 	skill wpa_supplicant
 	sudo wpa_supplicant -B -i "${1:-wlan0}" -c /etc/wpa_supplicant/wpa_supplicant.conf
@@ -441,7 +463,7 @@ norminette () {
 	local vers
 	local newst
 
-	_have norminette || { err 'norminette missing'; return 1; }
+	_have norminette || { log.err 'norminette missing' ; return 1 ; }
 
 	vers="$($(type -P norminette) -v | cut -d" " -f2)"
 	newst='3.3.55'
@@ -455,8 +477,8 @@ norminette () {
 ################################ __norm (posix) ################################
 # Depends on git, norminette
 __norm () {
-	_have git || { err 'git missing'; return 1; }
-	_have norminette || { err 'norminette missing'; return 2; }
+	_have git || { log.err 'git missing' ; return 1 ; }
+	_have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	__pwd="$(pwd -P)"
 	[ -n "${__pwd}" ] && [ -z "${__pwd##${HOME-}/42/42cursus/*}" ] || { return 1 ; }
@@ -472,8 +494,8 @@ ft_check () {
 	URL="${1}"
 	DIR="/tmp/tmp_repo_$(date +%s)"
 
-	_have git || { err 'git missing'; return 1; }
-	_have norminette || { err 'norminette missing'; return 2; }
+	_have git || { log.err 'git missing' ; return 1 ; }
+	_have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	# If no URL, get it from current repo
 	if [ -z "${URL-}" ] ; then
@@ -501,8 +523,8 @@ clone42 () {
 	folder="${1}"
 	repo_url="${2}"
 
-	_have git || { err 'git missing'; return 1; }
-	_have norminette || { err 'norminette missing'; return 2; }
+	_have git || { log.err 'git missing' ; return 1 ; }
+	_have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	git clone --quiet "${repo_url}" "${folder}" && {
 		cd "${folder}"
@@ -533,7 +555,7 @@ export MANPAGER='nvim +Man!'
 export BAT_THEME='gruvbox-dark'
 # export BAT_THEME='gruvbox-light'
 
-[ -n "${DISPLAY-}" ] || warn 'DISPLAY not set'
+[ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
 
 if [ ! "${TERM-}" = "linux" ] ; then
 	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
@@ -557,7 +579,7 @@ fi
 . "${HOME}"/.bash-preexec.sh
 
 preexec() {
-	[ -d "${HISTDIR}" ] || { mkdir -p -- "${HISTDIR}" || warn "Can't create directory: ${HISTDIR}" ; }
+	[ -d "${HISTDIR}" ] || { mkdir -p -- "${HISTDIR}" || log.warn "Can't create directory: ${HISTDIR}" ; }
 	history -a
 	TIMESTAMP_BEFORE="$(date +%s)"
 }
@@ -639,9 +661,9 @@ aocload () {
 	local year
 	local day
 
-	_have curl || { err 'curl missing'; exit 1; }
-	_have tmux || { err 'tmux missing'; exit 2; }
-	_have git || { err 'git missing'; exit 3; }
+	_have curl || { log.err 'curl missing' ; exit 1 ; }
+	_have tmux || { log.err 'tmux missing' ; exit 2 ; }
+	_have git || { log.err 'git missing' ; exit 3 ; }
 
 	this_year="$(date "+%Y")"
 	this_day="$(date "+%d" | sed -e 's/^0//')"
@@ -679,7 +701,7 @@ aocload () {
 		-o './in.txt'                                       \
 		-b "session=${AOC_COOKIE}"                          \
 		"https://adventofcode.com/${year}/day/${day}/input" \
-		|| printf '\033[31m%s\033[m' "$(err 'Error downloading input' | tee './in.txt')"
+		|| printf '\033[31m%s\033[m' "$(log.err 'Error downloading input' | tee './in.txt')"
 	unset -v -- AOC_COOKIE
 
 	if [ ! -f './solution.py' ] ; then
