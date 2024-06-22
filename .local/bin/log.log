@@ -1,0 +1,23 @@
+#! /bin/sh -
+
+if [ "${0##*/}" = "log.log" ] ; then
+	case "${1-}" in
+		red) ansi='41;30'    ;;
+		orange) ansi='43;30' ;;
+		blue) ansi='44;30'   ;;
+		green) ansi='42;30'  ;;
+		*) ansi='45;30'      ;;
+	esac
+	shift
+	1>&2 printf "\033[${ansi}m%s\033[m\n" "${*}"
+	unset ansi
+	exit 0
+fi
+
+case "${0##*/}" in
+	log.err) log.log red "${@}" ;;
+	log.warn) log.log orange "${@}" ;;
+	log.info) log.log blue "${@}" ;;
+	log.good) log.log green "${@}" ;;
+	*) log.log nothing "${@}" ;;
+esac
