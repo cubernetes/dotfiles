@@ -4,14 +4,14 @@
 ############################### completion start ###############################
 options='--no-chattr --no-sudo'
 if [ -n "${COMP_LINE}" ] ; then
- if [ "${1}" = "${3}" ] && [ ! "${2#-}" = "${2}" ] ; then
+ if [ "${2#-}" = "${2}" ] ; then
+  find "$(dirname -- "${2}")" -mindepth 1 -maxdepth 1 -path "$(dirname -- "${2}")/$(basename -- "${2}")*"
+ else
   for option in $options ; do
    case "${option}" in
     "${2}"*) printf '%s\n' "${option}" ;;
    esac
   done
- elif [ "${2#-}" = "${2}" ] ; then
-	 find "$(dirname -- "${2}")" -mindepth 1 -maxdepth 1 -path "$(dirname -- "${2}")/$(basename -- "${2}")*"
  fi
  exit
 fi
@@ -30,10 +30,16 @@ while : ; do
 	shift
 done
 
-test "${#}" -ne "2" && { log.err "Usage: backup_dir [--no-chattr] [--no-sudo] BACKUP_DIR DIR" ; exit 1 ; }
-
-backupdir="${1:-${HOME}/backups}"
-srcfile="${2}"
+if [ "${#}" -eq "1" ] && [ -n "${1}" ]; then
+	backupdir="${HOME}/backups"
+	srcfile="${1}"
+elif [ "${#}" -eq "2" ] && [ -n "${1}" ] && [ -n "${2}" ] ; then
+	backupdir="${1}"
+	srcfile="${2}"
+else
+	log.err "Usage: backup_dir [--no-chattr] [--no-sudo] [BACKUP_DIR] FILE"
+	exit 1
+fi
 ############################# argument parsing end #############################
 
 if [ "${no_sudo}" = "1" ] ; then
