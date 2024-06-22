@@ -54,7 +54,7 @@ hash -r
 unalias -a
 unset POSIXLY_CORRECT
 
-################################# ENVIRONMENT ##################################
+################################# environment ##################################
 export EDITOR="$({	type -P nvim ||
 					type -P vim  ||
 					type -P vi   ||
@@ -291,7 +291,7 @@ write_history () {
 		rm -f -- "${HISTFILE}"
 } && trap 'write_history' EXIT
 
-############################# VIM ALIASES (posix) ##############################
+############################# vim aliases (posix) ##############################
 if _have nvim ; then
 	alias vi="$(_path_lookup nvim)"
 elif _have vim ; then
@@ -602,7 +602,7 @@ clone42 () {
 	} || { printf '%s\n' "Could not clone repo!" ; }
 }
 
-################################ BASH PRE-EXEC #################################
+################################ bash pre-exec #################################
 if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
 	curl -sfkSL "https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh" -o "${HOME}"/.bash-preexec.sh
 fi
@@ -634,7 +634,7 @@ precmd() {
 	fi
 }
 
-#################################### PROMPT ####################################
+#################################### prompt ####################################
 GIT_PS1_SHOWDIRTYSTATE='1'
 GIT_PROMPT='1'
 if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT-}" -eq "1" ] ; then
@@ -679,7 +679,7 @@ fi
 # Show shell level
 # PS1='[${SHLVL}] '"${PS1}"
 
-# ##################################### AOC ######################################
+# ##################################### aoc ######################################
 AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
 alias aos='< in.txt python3 solution.py'
 alias aot='< test.txt printf '\033[34m' ;  python3 solution.py ; printf '\033[m''
@@ -790,7 +790,7 @@ aocload () {
 	tmux send-keys "nvim './solution.py'" ENTER
 }
 
-############################## TERMINAL SETTINGS ###############################
+############################## terminal settings ###############################
 tabs -4
 set -o emacs
 _have lesspipe && eval "$(SHELL=/bin/sh lesspipe)"
@@ -802,7 +802,10 @@ _have xset && 2>/dev/null xset r rate 200 60
 # Disable bell
 _have xset && 2>/dev/null xset -b
 
-################################# COMPLETIONS ##################################
+################################# completions ##################################
 complete -F _command vimw
+complete -C backup_dir backup_dir
+complete -C backup_file backup_file
 
+################################### sources ####################################
 _source_if "${HOME}/.userbashrc"
