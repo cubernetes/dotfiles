@@ -24,7 +24,7 @@ def main() -> int:
         input("Press any key to exit")
         return 1
     matches = re.findall(URL_REGEX, pane_out.decode())
-    sp.run([os.environ['HOME'] + '/.local/bin/tui_choice.sh'] + matches)
+    sp.run([os.environ['HOME'] + '/.local/bin/tui_choice'] + matches)
     return 0
 
 if __name__ == '__main__':

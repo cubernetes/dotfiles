@@ -1,1 +1,6 @@
-0 * * * * /home/tosuman/.local/bin/system_update.sh
+# PATH="${PATH:+$PATH:}${HOME}/.local/bin"
+WHATEVER="$(echo hi)"
+* * * * * echo $PATH > tmp.txt
+* * * * * echo $WHATEVER > tmp2.txt
+# 0 * * * * /home/tosuman/.local/bin/system_update.sh
+# * * * * * PATH="$PATH:" /home/tosuman/.local/bin/backup_file /home/tosuman/
