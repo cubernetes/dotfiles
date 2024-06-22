@@ -1,0 +1,18 @@
+#! /bin/sh -
+# Depends on GNU cp, basename, log.err
+
+[ "${#}" -ne "2" ] && { log.err "Usage: backup_dir BACKUP_DIR DIR" ; exit 1 ; }
+
+backupdir="${1:-${HOME}/backups}"
+srcdir="${2}"
+backupname="$(basename -- "$srcdir")"
+
+[ -d "${srcdir}" ] || { log.err "Directory '${srcdir}' does not exist" ; exit 2 ; }
+[ -d "${backupdir}" ] || mkdir -p -- "${backupdir}" || { log.err "Backup Directory '${backupdir}' couldn't be created" ; exit 3 ; }
+
+if [ -e "${backupdir}/${backupname}" ]; then
+	chattr -i "${backupdir}/${backupname}" || { log.err "Can't chattr -i '${backupdir}/${backupname}'" ; exit 4 ; }
+fi
+tar --backup=t -cvzf "${backupdir}/${backupname}" "${srcdir}" || { log.err "Can't tar --backup=t -cvzf '${backupdir}/${backupname}' '${srcdir}'" ; exit 5 ; }
+
+find "${backupdir}" -mindepth 1 -exec chattr +i {} + || { log.err "Can't chattr +i some files" ; exit 6 ; }

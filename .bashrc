@@ -1,6 +1,8 @@
 #! /bin/bash --
 # ex: set ts=4 sw=4 ft=sh
 
+# TODO: Test on solaris (and other unices). Many tools will fail since we're not considering /usr/xpg4/bin
+
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
 
@@ -51,6 +53,73 @@ __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # name
 hash -r
 unalias -a
 unset POSIXLY_CORRECT
+
+################################# ENVIRONMENT ##################################
+export EDITOR="$({	type -P nvim ||
+					type -P vim  ||
+					type -P vi   ||
+					type -P nvi  ||
+					type -P hx   ||
+					type -P nano ||
+					type -P ex   ||
+					type -P ed ; } 2>/dev/null)"
+export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME-}"/.ssh/config'
+export LANG='en_US.UTF-8'
+export USER="${USER:-$(whoami)}"
+export VISUAL="${EDITOR-}"
+export SUDO_EDITOR="${EDITOR-}"
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+export GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
+export GPG_TTY="$(tty)"
+export _JAVA_AWT_WM_NONREPARENTING="1"
+export USER42="tischmid"
+export EMAIL42="timo42@proton.me"
+export MAIL="timo42@proton.me"
+export GOPATH="$HOME/go"
+export MANPAGER='nvim +Man!'
+# export MANPAGER='less -X'
+export BAT_THEME='gruvbox-dark'
+# export BAT_THEME='gruvbox-light'
+export PATH
+export LD_LIBRARY_PATH
+
+if ! [ -n "${USER-}" ] ; then
+if ! USER="$(2>/dev/null ps -o user= -p "${$}" | awk '{print $1}')" ; then
+if ! USER="$(2>/dev/null whoami)" ; then
+if ! USER="$(2>/dev/null id -u -n)"; then
+if ! USER="$(basename -- "$(HOME=~ && printf %s "${HOME}")")" ; then
+if ! USER="$(2>/dev/null logname)" ; then
+if USER="${LOGNAME-}" ; [ -z "${USER}" ] ; then
+unset USER
+fi; fi; fi; fi; fi; fi; fi
+
+if ! [ -n "${HOME-}" ] ; then
+if ! HOME="$(getent passwd "$(id -u "${USER}")" | cut -d: -f6)" ; then
+if ! HOME="$(getent passwd "${UID}" | cut -d: -f6)" ; then
+if ! HOME="$(awk -v FS=':' -v user="${USER}" '($1==user) {print $6}' "/etc/passwd")" ; then
+unset HOME
+HOME=~
+if [ "${HOME}" = "~" ] ; then
+if ! mkdir "/tmp/${USER}" && HOME="/tmp/${USER}" ; then
+unset HOME
+fi; fi ; fi ; fi ; fi; fi
+
+[ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
+
+if [ ! "${TERM-}" = "linux" ] ; then
+	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
+		export TERM='xterm-256color'
+	elif [ -f '/usr/share/terminfo/x/xterm-color' ] ; then
+		export TERM='xterm-color'
+	elif [ -f '/usr/share/terminfo/x/xterm' ] ; then
+		export TERM='xterm'
+	elif [ -f '/usr/share/terminfo/s/screen-256color' ] ; then
+		export TERM='screen-256color'
+	elif [ -f '/usr/share/terminfo/s/screen' ] ; then
+		export TERM='screen'
+	fi
+fi
 
 ######################## path append & prepend (posix) #########################
 pathvarprepend () {
@@ -207,14 +276,15 @@ readonly BASH_SESSION_NAME="${$}"
 HISTSIZE='-1'
 HISTFILESIZE='-1'
 REAL_HISTFILE="${HOME}/.better_bash_history/.bash_history_$(printf "%(%Y-%m-%d)T")_daily"
+REAL_HISTDIR="$(dirname -- "${REAL_HISTFILE}")"
 HISTFILE="${HOME}/.better_bash_history/.bash_history_$(printf '%(%Y-%m-%d-%H-%M-%S)T')_${BASH_SESSION_NAME}"
-HISTDIR="$(dirname -- "$HISTFILE")"
+HISTDIR="$(dirname -- "${HISTFILE}")"
 HISTTIMEFORMAT=$'\033[m%F %T: '
 HISTCONTROL='ignoreboth'
 history -c
 history -r -- "${REAL_HISTFILE}"
 write_history () {
-	[ -d "${REAL_HISTFILE}" ] || { rm -f -- "$(dirname -- "${REAL_HISTFILE}")" && mkdir -p -- "$(dirname -- "${REAL_HISTFILE}")" ; }
+	[ -d "${REAL_HISTDIR}" ] || { rm -f -- "${REAL_HISTDIR}" && mkdir -p -- "${REAL_HISTDIR}" ; }
 	[ -f "${HISTFILE}" ] &&
 		[ -r "${HISTFILE}" ] &&
 		<"${HISTFILE}" 1>/dev/null tee -a -- "${REAL_HISTFILE}" &&
@@ -531,45 +601,6 @@ clone42 () {
 		norminette -R CheckForbiddenSourceHeader "."
 	} || { printf '%s\n' "Could not clone repo!" ; }
 }
-
-################################# ENVIRONMENT ##################################
-export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME-}"/.ssh/config'
-
-export LANG='en_US.UTF-8'
-export USER="${USER:-$(whoami)}"
-
-export EDITOR="$({	type -P nvim ||
-					type -P vim  ||
-					type -P vi   ||
-					type -P nvi  ||
-					type -P hx   ||
-					type -P nano ||
-					type -P ex   ||
-					type -P ed ; } 2>/dev/null)"
-export VISUAL="${EDITOR-}"
-export SUDO_EDITOR="${EDITOR-}"
-
-export MANPAGER='nvim +Man!'
-# export MANPAGER='less -X'
-
-export BAT_THEME='gruvbox-dark'
-# export BAT_THEME='gruvbox-light'
-
-[ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
-
-if [ ! "${TERM-}" = "linux" ] ; then
-	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
-		export TERM='xterm-256color'
-	elif [ -f '/usr/share/terminfo/x/xterm-color' ] ; then
-		export TERM='xterm-color'
-	elif [ -f '/usr/share/terminfo/x/xterm' ] ; then
-		export TERM='xterm'
-	elif [ -f '/usr/share/terminfo/s/screen-256color' ] ; then
-		export TERM='screen-256color'
-	elif [ -f '/usr/share/terminfo/s/screen' ] ; then
-		export TERM='screen'
-	fi
-fi
 
 ################################ BASH PRE-EXEC #################################
 if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then

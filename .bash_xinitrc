@@ -169,21 +169,26 @@ export MAIL="timo42@proton.me"
 
 export GOPATH="$HOME/go"
 
-ld_lib_path_append "${LD_LIBRARY_PATH}:${HOME}/.local/lib"
-export LD_LIBRARY_PATH
+# ld_lib_path_append \
+# 	"${HOME}/.local/lib"
+# export LD_LIBRARY_PATH
 
-path_prepend "/bin" \
+path_prepend \
+	"/bin" \
 	"/sbin" \
 	"/usr/bin" \
 	"/usr/sbin" \
 	"/usr/local/bin" \
-	"/usr/lcoal/sbin" \
-	"/usr/local/games" \
+	"/usr/local/sbin" \
 	"/usr/games" \
+	"/usr/local/games" \
 	"/snap/bin" \
+
+path_append \
 	"${HOME}/bin" \
+	"${HOME}/.bin" \
 	"${HOME}/.local/bin" \
-	"${HOME}/.local/include" \
+	"${HOME}/.local/sbin" \
 	"${HOME}/.brew/bin" \
 	"${GOPATH}/bin"
 export PATH
