@@ -1,0 +1,2 @@
+#! /bin/sh -
+exec xrandr --output HDMI-1 --auto --output DP-1 --right-of HDMI-1 --auto

@@ -1,0 +1,31 @@
+#! /bin/bash --
+
+command -v lynx >/dev/null 2>&1 || { echo "Need lynx"; exit 1; }
+
+urlencode () {
+	local str="$*"
+	local encoded=
+	local i c x
+	for (( i=0; i < ${#str}; ++i )); do
+		c=${str:$i:1}
+		case "$c" in
+			[-_.~a-zA-Z0-9] ) x="$c" ;;
+			* ) printf -v x '%%%02x' "'$c" ;;
+		esac
+		encoded+="$x"
+	done
+	printf %s "$encoded"
+}
+
+if [ -t 0 ]; then
+	query=$(urlencode "$*")
+	dump=
+else
+	query=$(urlencode "$(tr -d '\n')")
+	dump="-dump"
+fi
+
+base="https://duckduckgo.com/lite?q="
+[ "$0" = "ggl" ] && base="https://www.google.com/search?q="
+
+exec lynx $dump "$base$query"
