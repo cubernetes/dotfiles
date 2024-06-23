@@ -6,15 +6,15 @@
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
 
-############################ utils (thanks rwxrob) #############################
-_path_lookup () { type -P "$1" ; } # adapted for bash.
-_have_all () { while [ $# -gt 0 ] ; do [ -x "$(_path_lookup "$1")" ] || return 1 ; shift ; done ; }
-_have () { _have_all "$1" ; }
-_source_if () { [ -f "$1" ] && [ -r "$1" ] && . "$1" ; }
+######################## utils (posix) (thanks rwxrob) #########################
+_path_lookup () { type -P "${1-}" ; } # adapted for bash.
+_have_all () { while [ "${#}" -gt "0" ] ; do [ -x "$(_path_lookup "${1-}")" ] || return 1 ; shift ; done ; }
+_have () { _have_all "${1-}" ; }
+_source_if () { [ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}" ; }
 
 # TODO: Create ~/.local/bin directory and add ~/.local/bin to PATH
 # Add some basic scripts, like log.log, etc.
-################################ logging utils #################################
+############################ logging utils (posix) #############################
 log.log () {
 	case "${1-}" in
 		red) __ansi='41;30'    ;;
@@ -52,211 +52,31 @@ __ALL_COMMANDS=("${__COMMANDS[@]}" . : g++ firewall-cmd apt-get xdg-open) # name
 2>/dev/null \unalias -- "${__ALL_COMMANDS[@]}"
 hash -r
 unalias -a
-unset POSIXLY_CORRECT
+unset -v POSIXLY_CORRECT
 
-################################# environment ##################################
-export EDITOR="$({	type -P nvim ||
-					type -P vim  ||
-					type -P vi   ||
-					type -P nvi  ||
-					type -P hx   ||
-					type -P nano ||
-					type -P ex   ||
-					type -P ed ; } 2>/dev/null)"
-export GIT_SSH_COMMAND='ssh -oIdentitiesOnly=yes -F"${HOME-}"/.ssh/config'
-export LANG='en_US.UTF-8'
-export USER="${USER:-$(whoami)}"
-export VISUAL="${EDITOR-}"
-export SUDO_EDITOR="${EDITOR-}"
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-export GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
-export GPG_TTY="$(tty)"
-export _JAVA_AWT_WM_NONREPARENTING="1"
-export USER42="tischmid"
-export EMAIL42="timo42@proton.me"
-export MAIL="timo42@proton.me"
-export GOPATH="$HOME/go"
-export MANPAGER='nvim +Man!'
-# export MANPAGER='less -X'
-export BAT_THEME='gruvbox-dark'
-# export BAT_THEME='gruvbox-light'
-export PATH
-export LD_LIBRARY_PATH
-
-if ! [ -n "${USER-}" ] ; then
-if ! USER="$(2>/dev/null ps -o user= -p "${$}" | awk '{print $1}')" ; then
-if ! USER="$(2>/dev/null whoami)" ; then
-if ! USER="$(2>/dev/null id -u -n)"; then
-if ! USER="$(basename -- "$(HOME=~ && printf %s "${HOME}")")" ; then
-if ! USER="$(2>/dev/null logname)" ; then
-if USER="${LOGNAME-}" ; [ -z "${USER}" ] ; then
-unset USER
-fi; fi; fi; fi; fi; fi; fi
-
-if ! [ -n "${HOME-}" ] ; then
-if ! HOME="$(getent passwd "$(id -u "${USER}")" | cut -d: -f6)" ; then
-if ! HOME="$(getent passwd "${UID}" | cut -d: -f6)" ; then
-if ! HOME="$(awk -v FS=':' -v user="${USER}" '($1==user) {print $6}' "/etc/passwd")" ; then
-unset HOME
-HOME=~
-if [ "${HOME}" = "~" ] ; then
-if ! mkdir "/tmp/${USER}" && HOME="/tmp/${USER}" ; then
-unset HOME
-fi; fi ; fi ; fi ; fi; fi
-
+####################### per session environment (posix) ########################
 [ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
+BAT_THEME='gruvbox-dark' # BAT_THEME='gruvbox-light'
+GPG_TTY="$(tty)"
 
 if [ ! "${TERM-}" = "linux" ] ; then
-	if [ -f '/usr/share/terminfo/x/xterm-256color' ] ; then
-		export TERM='xterm-256color'
-	elif [ -f '/usr/share/terminfo/x/xterm-color' ] ; then
-		export TERM='xterm-color'
-	elif [ -f '/usr/share/terminfo/x/xterm' ] ; then
-		export TERM='xterm'
-	elif [ -f '/usr/share/terminfo/s/screen-256color' ] ; then
-		export TERM='screen-256color'
-	elif [ -f '/usr/share/terminfo/s/screen' ] ; then
-		export TERM='screen'
-	fi
+	__scope () {
+	test -f '/usr/share/terminfo/x/xterm-256color' && TERM='xterm-256color' && return
+	test -f '/usr/share/terminfo/x/xterm-color' && TERM='xterm-color' && return
+	test -f '/usr/share/terminfo/x/xterm' && TERM='xterm' && return
+	test -f '/usr/share/terminfo/s/screen-256color' && TERM='screen-256color' && return
+	test -f '/usr/share/terminfo/s/screen' && TERM='screen' && return
+	return 1
+	}
+	__scope
+	unset -f __scope
 fi
 
-######################## path append & prepend (posix) #########################
-pathvarprepend () {
-	# prepending paths to pathvar denoted by the expansion of the PATHVAR parameter
-	# if it's already in the PATH, move it to the end
-	# POSIX compliant version
-
-	test $# -ge 2 ||
-		{ log.info "Usage: pathvarprepend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]" ;
-		log.info "Example: pathvarprepend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'" ;
-		return 2 ; }
-
-	pathvar=$1
-	shift
-
-	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ log.err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
-
-	if [ "$pathvar" = "PATH" ] ; then
-		test "${-#*r}" = $- ||
-			{ log.err 'Restricted shell, cannot change PATH' ; return 4 ; }
-	fi
-
-	path_prepend_error=0
-
-	# Thanks Stephane
-	code='set -- dummy'
-	n=$#
-	while [ "$n" -gt 0 ] ; do
-		code="$code \"\${$n}\""
-		n=$((n - 1))
-	done
-	eval "$code"
-
-	while shift ; [ $# -gt 0 ] ; do
-		norm_path_to_add=$1
-
-		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ log.warn "Cannot add path with colon: $norm_path_to_add" ; path_prepend_error=1 ; continue ; }
-
-		test -d "$norm_path_to_add" ||
-			{ log.warn "path_to_add ('$norm_path_to_add') not a directory" ; path_prepend_error=1 ; continue ; }
-
-		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
-		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
-		exec 3<<- 'EOF'
-			# escape BRE meta-characters
-			s/\\/\\./g # backslash first
-			s/\./\\./g
-			s/\^/\\^/g
-			s/\$/\\$/g
-			s/\*/\\*/g
-			s/\[/\\[/g
-			s|/|\\/|g # escape delimiter for outer sed
-		EOF
-		norm_path=$(printf %s "$norm_path" | sed "s/:$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<&3)://g") # remove all instances of PATH_TO_ADD from PATH
-		exec 3<&-
-		norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
-		eval "$pathvar=\$norm_path_to_add\${norm_path:+:\$norm_path}" # prepend with colon
-	done
-	return $path_prepend_error
-}
-
-pathvarappend () {
-	# appending paths to pathvar denoted by the expansion of the PATHVAR parameter
-	# if it's already in the PATH, move it to the end
-	# POSIX compliant version
-
-	test $# -ge 2 ||
-		{ log.info "Usage: pathvarappend PATHVAR PATH_TO_ADD [PATH_TO_ADD...]"
-		log.info "Example: pathvarappend LD_LIBRARY_PATH '$HOME/.local/lib' '/usr/local/lib'"
-		return 2 ; }
-
-	pathvar=$1
-
-	case $pathvar in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
-		{ log.err 'Expanded pathvar is not a valid name/variable identifier' ; return 3 ; }
-
-	if [ "$pathvar" = "PATH" ] ; then
-		test "${-#*r}" = $- ||
-			{ log.err 'Restricted shell, cannot change PATH' ; return 4 ; }
-	fi
-
-	path_append_error=0
-
-	while shift ; [ $# -gt 0 ] ; do
-		norm_path_to_add=$1
-
-		test "${norm_path_to_add#*:}" = "$norm_path_to_add" ||
-			{ log.warn 'Cannot add path with colon' ; path_append_error=1 ; continue ; }
-
-		test -d "$norm_path_to_add" ||
-			{ log.warn "path_to_add ('$norm_path_to_add') not a directory" ; path_append_error=1 ; continue ; }
-
-		norm_path=$(printf %s ":$(eval "printf %s "'"'"\$$pathvar"'"'):" | head -n 1 | sed 's|/\+|/|g; s/\/$//; s/:/::/g') # fence with colons, ensure one line, deduplicate slashes, trim trailing, duplicate colons
-		norm_path_to_add=$(printf %s "$norm_path_to_add" | head -n 1 | sed 's|/\+|/|g; s/\/$//') # ensure one line, deduplicate slashes, trim trailing
-		exec 3<<- 'EOF'
-			# escape BRE meta-characters
-			s/\\/\\./g # backslash first
-			s/\./\\./g
-			s/\^/\\^/g
-			s/\$/\\$/g
-			s/\*/\\*/g
-			s/\[/\\[/g
-			s|/|\\/|g # escape delimiter for outer sed
-		EOF
-		norm_path=$(printf %s "$norm_path" | sed "s/:$(printf %s "$norm_path_to_add" | sed -f /proc/self/fd/3 3<&3)://g") # remove all instances of PATH_TO_ADD from PATH
-		exec 3<&-
-		norm_path=$(printf %s "$norm_path" | sed 's/:\+/:/g; s/^://; s/:$//') # deduplicate colons, trim leading and trailing
-		eval "$pathvar=\${norm_path:+\$norm_path:}\$norm_path_to_add" # append with colon
-	done
-	return $path_append_error
-}
-
-path_append () {
-	pathvarappend PATH "$@"
-}
-
-ld_lib_path_append () {
-	pathvarappend LD_LIBRARY_PATH "$@"
-}
-
-cdpath_append () {
-	pathvarappend CDPATH "$@"
-}
-
-path_prepend () {
-	pathvarprepend PATH "$@"
-}
-
-ld_lib_path_prepend () {
-	pathvarprepend LD_LIBRARY_PATH "$@"
-}
-
-cdpath_prepend () {
-	pathvarprepend CDPATH "$@"
-}
+# ensure exported
+export USER HOME PWD PATH LD_LIBRARY_PATH TERM LANG DISPLAY EDITOR VISUAL \
+	XDG_RUNTIME_DIR MAIL GOPATH SUDO_EDITOR SSH_AUTH_SOCK MANPAGER \
+	GIT_SSH_COMMAND GIT_CONFIG_GLOBAL GPG_TTY BAT_THEME _JAVA_AWT_WM_NONREPARENTING \
+	USER42 EMAIL42
 
 ################################# bash options #################################
 shopt -s autocd
@@ -327,6 +147,7 @@ alias watch='watch -tcn.1 ' # trailing space means complete aliases
 
 ########################## overwrite aliases (posix) ###########################
 alias make='compiledb make'
+alias cat='bat'
 
 ########################## navigation aliases (posix) ##########################
 alias r='ranger'
@@ -342,13 +163,13 @@ alias wttr='curl -sfkSL wttr.in'
 alias ipa='ip -br -color=auto a'
 alias xcopy='xsel --clipboard --input'
 alias xpaste='xsel --clipboard --output'
-alias paco='"${HOME-}"/francinette/tester.sh'
-alias pcker='nvim "${HOME-}"/.config/nvim/lua/*'
-alias francinette='"${HOME-}"/francinette/tester.sh'
+alias paco='"${HOME-}/francinette/tester.sh"'
+alias pcker='nvim "${HOME-}/.config/nvim/lua/"*'
+alias francinette='"${HOME-}/francinette/tester.sh"'
 alias q-dig='docker run --rm -it ghcr.io/natesales/q'
 alias q='duck'
-alias after='nvim "${HOME-}"/.config/nvim/after/plugin'
-alias dotconf='git --git-dir="${HOME-}"/.dotfiles/ --work-tree="${HOME-}"'
+alias after='nvim "${HOME-}/.config/nvim/after/plugin"'
+alias dotconf='git --git-dir="${HOME-}/.dotfiles/" --work-tree="${HOME-}"'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
 alias colors='bash -c "$(curl -sfkSL "https://gist.githubusercontent.com/HaleTom/89ffe32783f89f403bba96bd7bcd1263/raw")"'
@@ -371,17 +192,17 @@ vix () {
 
 	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [VIM_ARGS...]" ; return 1 ; }
 
-	file="${1}"
+	file="${1-}"
 	shift
-	[ -e "$file" ] && [ ! -f "$file" ] && { log.err "File '$file' exists and is not a regular file" ; return 2 ; }
-	if [ ! -e "$file" ] ; then
-		printf "#! /bin/sh -\n\n\n" > "$file" || { log.err "Can't write to file '$file'" ; return 3 ; }
-		set -- "$@" +3
+	[ -e "${file}" ] && [ ! -f "${file}" ] && { log.err "File '${file}' exists and is not a regular file" ; return 2 ; }
+	if [ ! -e "${file}" ] ; then
+		printf "#! /bin/sh -\n\n\n" > "${file}" || { log.err "Can't write to file '${file}'" ; return 3 ; }
+		set -- "${@}" +3
 	fi
-	if [ ! -x "$file" ] ; then
-		chmod +x "$file" || { log.err "Can't chmod +x '$file'" ; return 4 ; }
+	if [ ! -x "${file}" ] ; then
+		chmod +x "${file}" || { log.err "Can't chmod +x '${file}'" ; return 4 ; }
 	fi
-	vi "$@" "$file"
+	vi "${@}" "${file}"
 }
 
 ##################### cd with pushd functionality (posix) ######################
@@ -397,11 +218,11 @@ cd () {
 vimw () {
 	_have vi || { log.err 'vi missing' ; exit 1 ; }
 
-	[ -z "$1" ] && { log.info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
+	[ -z "${1-}" ] && { log.info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
 
-	first="$1"
+	first="${1-}"
 	shift
-	vi "$@" "$(type -P "$first")"
+	vi "${@}" "$(type -P "${first}")"
 }
 
 #################################### paruuu (posix) ####################################
@@ -484,15 +305,15 @@ skill () {
 	exit_status=0
 	while [ -n "${1-}" ] ; do
 		# pids="$(ps -eo pid,cmd)"
-		# pids="$(echo "$pids" | cut -d " " -f3- | grep -n -- "$1" | cut -d ":" -f1 | awk 'BEGIN{printf "NR=="}ORS="||NR=="' | head -n 1 | pids="$pids" xargs --no-run-if-empty -I {} bash -c 'echo "$pids" | cut -d " " -f2 | awk "${1}0"' bash {})"
-		pgrep -f -- "$1" | xargs -r kill -9 && return 0 || {
+		# pids="$(echo "${pids}" | cut -d " " -f3- | grep -n -- "${1-}" | cut -d ":" -f1 | awk 'BEGIN{printf "NR=="}ORS="||NR=="' | head -n 1 | pids="${pids}" xargs --no-run-if-empty -I {} bash -c 'echo "${pids}" | cut -d " " -f2 | awk "${1-}0"' bash {})"
+		pgrep -f -- "${1-}" | xargs -r kill -9 && return 0 || {
 			printf '\033[31m%s\033[m\n' "These processes couldn't be killed without sudo:"
-			pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
+			pgrep -f "${1-}" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 		}
-		pgrep -f -- "$1" | sudo xargs -r kill -9 || {
-			if [ $? -ne 1 ] ; then
+		pgrep -f -- "${1-}" | sudo xargs -r kill -9 || {
+			if [ "${?}" -ne "1" ] ; then
 				printf '\033[41;30m%s\033[m\n' "These processes couldn't be killed with root (sudo):"
-				pgrep -f "$1" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
+				pgrep -f "${1-}" | xargs ps -o user,ruser,pid,c,stime,tty,time,cmd
 			else
 				log.info Cancelled
 				return 3 ;
@@ -501,7 +322,7 @@ skill () {
 		}
 		shift
 	done
-	return $exit_status
+	return "${exit_status}"
 }
 
 ############################# wpa_restart (posix) ##############################
@@ -522,8 +343,8 @@ bat () {
 
 ################################# take (posix) #################################
 take () {
-	mkdir -p -- "$1" &&
-		cd -P -- "$1" ||
+	mkdir -p -- "${1-}" &&
+		cd -P -- "${1-}" ||
 		return 1 ;
 }
 
@@ -561,7 +382,7 @@ __norm () {
 # Depends on git, norminette
 ft_check () {
 	# Set params
-	URL="${1}"
+	URL="${1-}"
 	DIR="/tmp/tmp_repo_$(date +%s)"
 
 	_have git || { log.err 'git missing' ; return 1 ; }
@@ -590,8 +411,8 @@ ft_check () {
 ############################### clone42 (posix) ################################
 # Depends on git, norminette
 clone42 () {
-	folder="${1}"
-	repo_url="${2}"
+	folder="${1-}"
+	repo_url="${2-}"
 
 	_have git || { log.err 'git missing' ; return 1 ; }
 	_have norminette || { log.err 'norminette missing' ; return 2 ; }
@@ -603,11 +424,11 @@ clone42 () {
 }
 
 ################################ bash pre-exec #################################
-if [ ! -f "${HOME}"/.bash-preexec.sh ] ; then
-	curl -sfkSL "https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh" -o "${HOME}"/.bash-preexec.sh
+if [ ! -f "${HOME}/.bash-preexec.sh" ] ; then
+	curl -sfkSL "https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh" -o "${HOME}/.bash-preexec.sh"
 fi
 
-. "${HOME}"/.bash-preexec.sh
+. "${HOME}/.bash-preexec.sh"
 
 preexec() {
 	[ -d "${HISTDIR}" ] || { mkdir -p -- "${HISTDIR}" || log.warn "Can't create directory: ${HISTDIR}" ; }
@@ -637,8 +458,8 @@ precmd() {
 #################################### prompt ####################################
 GIT_PS1_SHOWDIRTYSTATE='1'
 GIT_PROMPT='1'
-if [ ! -f "${HOME}"/git-prompt.sh ] && [ "${GIT_PROMPT-}" -eq "1" ] ; then
-	curl -sfkSL "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh" -o "${HOME}"/git-prompt.sh
+if [ ! -f "${HOME}/git-prompt.sh" ] && [ "${GIT_PROMPT-}" -eq "1" ] ; then
+	curl -sfkSL "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh" -o "${HOME}/git-prompt.sh"
 fi
 
 _PS1_CWD_CLR='\[\033[33m\]'
@@ -661,9 +482,9 @@ _PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
 # _PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 _PS1_2='\[\033[m\]\[\033[36m\]\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 
-if [ -f "${HOME}"/git-prompt.sh ] &&	[ -r "${HOME}"/git-prompt.sh ] && \
+if [ -f "${HOME}/git-prompt.sh" ] &&	[ -r "${HOME}/git-prompt.sh" ] && \
 										[ "${GIT_PROMPT-}" -eq "1" ] ; then
-	. "${HOME}"/git-prompt.sh
+	. "${HOME}/git-prompt.sh"
 	PS1="${_PS1_1-}${_PS1_GIT-}${_PS1_2-}"
 else
 	PS1="${_PS1_1-}${_PS1_2-}"
@@ -680,7 +501,8 @@ fi
 # PS1='[${SHLVL}] '"${PS1}"
 
 # ##################################### aoc ######################################
-AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
+# TODO: put into script
+export AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
 alias aos='< in.txt python3 solution.py'
 alias aot='< test.txt printf '\033[34m' ;  python3 solution.py ; printf '\033[m''
 alias aoc='aot ; echo ; aos'
@@ -698,17 +520,17 @@ aocload () {
 
 	this_year="$(date "+%Y")"
 	this_day="$(date "+%d" | sed -e 's/^0//')"
-	if [ -n "${1}" ] ; then
-		if [ -z "${2}" ] ; then
+	if [ -n "${1-}" ] ; then
+		if [ -z "${2-}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected one more parameter (day)'
 			return 1
 		fi
-		if [ -n "${3}" ] ; then
+		if [ -n "${3-}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected exactly 2 parameters (year day)'
 			return 2
 		fi
-		year="${1}"
-		day="${2}"
+		year="${1-}"
+		day="${2-}"
 		if [ "${day}" -lt "1" -o "${day}" -gt "25" ] ; then
 			printf '\033[31m%s\033[m\n' 'Day not in range 1..25'
 			return 3
