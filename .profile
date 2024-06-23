@@ -246,7 +246,7 @@ else
 	[ -s "${NVM_DIR}/bash_completion" ] && . "${NVM_DIR}/bash_completion"
 
 	if ! set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' ; then
-		pidof -q startx && 1>/home/tosuman/.startx.log 2>&1 startx || log.warn "Not starting X again"
+		! pidof -q startx && 1>/home/tosuman/.startx.log 2>&1 startx || log.warn "Not starting X again"
 	fi
 	log.info ".profile sourced"
 	export PROFILE_SOURCED='1'

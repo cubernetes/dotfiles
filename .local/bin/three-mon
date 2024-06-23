@@ -5,7 +5,6 @@
 hdmi1_top
 dp1_right_hdmi1
 
-sleep 5
 xwallpaper --output DP-1 --zoom /home/tosuman/Wallpapers/hor/Dune.jpg
 xwallpaper --output eDP-1 --zoom /home/tosuman/Wallpapers/favs/travellers.jpg
 xwallpaper --output HDMI-1 --zoom /home/tosuman/Wallpapers/hor/koi.png
