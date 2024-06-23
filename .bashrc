@@ -2,6 +2,7 @@
 # ex: set ts=4 sw=4 ft=sh
 
 # TODO: Test on solaris (and other unices). Many tools will fail since we're not considering /usr/xpg4/bin
+# TODO: Make more general purpose, currently quite bashy
 
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
@@ -12,29 +13,9 @@ _have_all () { while [ "${#}" -gt "0" ] ; do [ -x "$(_path_lookup "${1-}")" ] ||
 _have () { _have_all "${1-}" ; }
 _source_if () { [ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}" ; }
 
-# TODO: Create ~/.local/bin directory and add ~/.local/bin to PATH
-# Add some basic scripts, like log.log, etc.
-############################ logging utils (posix) #############################
-log.log () {
-	case "${1-}" in
-		red) __ansi='41;30'    ;;
-		orange) __ansi='43;30' ;;
-		blue) __ansi='44;30'   ;;
-		green) __ansi='42;30'  ;;
-		*) __ansi='45;30'      ;;
-	esac
-	shift
-	1>&2 printf "\033[${__ansi}m%s\033[m\n" "${*}"
-	unset __ansi
-}
-log.err () { log.log red "${@}" ; }
-log.warn () { log.log orange "${@}" ; }
-log.info () { log.log blue "${@}" ; }
-log.good () { log.log green "${@}" ; }
-
 ###################### exit when already sourced (posix) #######################
 [ -n "${BASHRC_SOURCED}" ] && { log.err ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
-BASHRC_SOURCED='1'
+BASHRC_SOURCED='1' # don't use export here, otherwise you can't start shells within shells
 
 ################################## bash reset ##################################
 # Set IFS to the default value, <space><tab><newline>
@@ -55,7 +36,10 @@ unalias -a
 unset -v POSIXLY_CORRECT
 
 ####################### per session environment (posix) ########################
+set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/null
 [ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
+set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/tty
+
 BAT_THEME='gruvbox-dark' # BAT_THEME='gruvbox-light'
 GPG_TTY="$(tty)"
 
