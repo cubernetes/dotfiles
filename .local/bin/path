@@ -1,6 +1,6 @@
 #! /bin/sh -
-# POSIX-compliant shell script to print the PATH contents line by line,
-# without duplicated, in order, without empty lines.
+# POSIX-compliant shell script to print the PATH (or the variable expanded by pathvar)
+# contents line by line, without duplicated, in order, without empty lines.
 
 __arrvar="__arr_random_n8241vn81y39c"
 
@@ -18,14 +18,16 @@ in_list () {
 	return 1
 }
 
+[ -n "${1}" ] && pathvar="${1}" || pathvar="PATH"
+
 idx=0
-printf "%s\n" "$PATH" | sed "s/^:\+//; s/:\+$//; s/:\+/\n/g" | while IFS= read -r line; do
+printf "%s\n" "$(eval "printf %s "'"'"\$$pathvar"'"'"")" | sed "s/^:\+//; s/:\+$//; s/:\+/\n/g" | while IFS= read -r line; do
 	eval "unset ${__arrvar}_$idx"
 	idx="$((idx+1))"
 done
 
 idx=0
-printf "%s\n" "$PATH" | sed "s/^:\+//; s/:\+$//; s/:\+/\n/g" | while IFS= read -r line; do
+printf "%s\n" "$(eval "printf %s "'"'"\$$pathvar"'"'"")" | sed "s/^:\+//; s/:\+$//; s/:\+/\n/g" | while IFS= read -r line; do
 	line="$(printf %s "$line" | sed 's|/\+|/|g; s|/$||')"
 	in_list "$idx" "$line" && continue
 	printf "%s\n" "$line"

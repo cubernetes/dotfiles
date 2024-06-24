@@ -7,12 +7,6 @@
 # Exit when noninteractive. This is more portable than checking PS1.
 [ "${-#*i}" = "${-}" ] && return
 
-######################## utils (posix) (thanks rwxrob) #########################
-_path_lookup () { type -P "${1-}" ; } # adapted for bash.
-_have_all () { while [ "${#}" -gt "0" ] ; do [ -x "$(_path_lookup "${1-}")" ] || return 1 ; shift ; done ; }
-_have () { _have_all "${1-}" ; }
-_source_if () { [ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}" ; }
-
 ###################### exit when already sourced (posix) #######################
 [ -n "${BASHRC_SOURCED}" ] && { log.err ".bashrc already sourced. Reset shell with 'exec bash [-l]' or start a new terminal." ; return 1 ; }
 BASHRC_SOURCED='1' # don't use export here, otherwise you can't start shells within shells
@@ -35,12 +29,51 @@ hash -r
 unalias -a
 unset -v POSIXLY_CORRECT
 
+#################################### utils #####################################
+# import_bash_functions () {
+# 	__func_str=
+# 	__func_name=
+# 	while IFS= read -r line ; do
+# 		case "${line}" in
+# 			BASH_FUNC_*"_PERCENT_PERCENT=() {  "*)
+# 				__func_str="$(printf %s "${line#BASH_FUNC_}" | sed -e 's/_PERCENT_PERCENT=/ /')"
+# 				__func_name="${line#BASH_FUNC_}"
+# 				__func_name="${__func_name%%_PERCENT_PERCENT=*}"
+# 				;;
+# 			"}BASH_FUNC_END")
+# 				eval "${__func_str}
+# }"
+# 				export -f -- "${__func_name}"
+# 				__func_str=
+# 				__func_name=
+# 				;;	
+# 			*)
+# 				if [ -n "${__func_str}" ] && [ -n "${__func_name}" ] ; then
+# 					__func_str="${__func_str}
+# ${line}"
+# 				fi
+# 			;;
+# 		esac
+# 	done << __ENV
+# $(env)
+# __ENV
+# 	unset -v __func_str __func_name
+# }
+
+# import_bash_functions
+
+__path_lookup () { type -P "${1-}" ; } && export -f __path_lookup # adapted for bash.
+__have_all () { while [ "${#}" -gt "0" ] ; do [ -x "$(__path_lookup "${1-}")" ] || return 1 ; shift ; done ; } && export -f __have_all
+__have () { __have_all "${1-}" ; } && export -f __have 
+__source_if () { [ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}" ; } && export -f __source_if 
+
+
 ####################### per session environment (posix) ########################
 set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/null
 [ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
 set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/tty
 
-BAT_THEME='gruvbox-dark' # BAT_THEME='gruvbox-light'
+BAT_THEME='gruvbox-dark' || BAT_THEME='gruvbox-light'
 GPG_TTY="$(tty)"
 
 if [ ! "${TERM-}" = "linux" ] ; then
@@ -55,12 +88,13 @@ if [ ! "${TERM-}" = "linux" ] ; then
 	__scope
 	unset -f __scope
 fi
+MANPAGER='less -X'
 
 # ensure exported
 export USER HOME PWD PATH LD_LIBRARY_PATH TERM LANG DISPLAY EDITOR VISUAL \
 	XDG_RUNTIME_DIR MAIL GOPATH SUDO_EDITOR SSH_AUTH_SOCK MANPAGER \
 	GIT_SSH_COMMAND GIT_CONFIG_GLOBAL GPG_TTY BAT_THEME _JAVA_AWT_WM_NONREPARENTING \
-	USER42 EMAIL42
+	USER42 EMAIL42 CDPATH
 
 ################################# bash options #################################
 shopt -s autocd
@@ -96,16 +130,16 @@ write_history () {
 } && trap 'write_history' EXIT
 
 ############################# vim aliases (posix) ##############################
-if _have nvim ; then
-	alias vi="$(_path_lookup nvim)"
-elif _have vim ; then
-	alias vi="$(_path_lookup vim)"
-elif _have nvi ; then
-	alias vi="$(_path_lookup nvi)"
-elif _have vi ; then
-	alias vi="$(_path_lookup vi)"
-elif _have nano ; then
-	alias vi="$(_path_lookup nano)"
+if __have nvim ; then
+	alias vi="$(__path_lookup nvim)"
+elif __have vim ; then
+	alias vi="$(__path_lookup vim)"
+elif __have nvi ; then
+	alias vi="$(__path_lookup nvi)"
+elif __have vi ; then
+	alias vi="$(__path_lookup vi)"
+elif __have nano ; then
+	alias vi="$(__path_lookup nano)"
 fi
 alias v='log.err use vi'
 alias vim='log.err use vi'
@@ -128,6 +162,7 @@ alias objdump='objdump --disassembler-color=extended-color -Mintel'
 alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
 alias sudo='sudo ' # trailing space means complete aliases
 alias watch='watch -tcn.1 ' # trailing space means complete aliases
+alias rm='rm -Iv'
 
 ########################## overwrite aliases (posix) ###########################
 alias make='compiledb make'
@@ -148,11 +183,11 @@ alias ipa='ip -br -color=auto a'
 alias xcopy='xsel --clipboard --input'
 alias xpaste='xsel --clipboard --output'
 alias paco='"${HOME-}/francinette/tester.sh"'
-alias pcker='nvim "${HOME-}/.config/nvim/lua/"*'
+alias pcker='vi "${HOME-}/.config/nvim/lua/"*'
 alias francinette='"${HOME-}/francinette/tester.sh"'
 alias q-dig='docker run --rm -it ghcr.io/natesales/q'
 alias q='duck'
-alias after='nvim "${HOME-}/.config/nvim/after/plugin"'
+alias after='vi "${HOME-}/.config/nvim/after/plugin"'
 alias dotconf='git --git-dir="${HOME-}/.dotfiles/" --work-tree="${HOME-}"'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
@@ -172,19 +207,19 @@ CDPATH="."\
 ################################## FUNCTIONS ###################################
 ################################# vix (posix) ##################################
 vix () {
-	_have vi || { log.err 'vi missing' ; exit 1 ; }
+	__have vi || { log.err 'vi missing' ; return 1 ; }
 
-	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [VIM_ARGS...]" ; return 1 ; }
+	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [[N]VI[M]_ARGS...]" ; return 1 ; }
 
 	file="${1-}"
 	shift
-	[ -e "${file}" ] && [ ! -f "${file}" ] && { log.err "File '${file}' exists and is not a regular file" ; return 2 ; }
+	[ -e "${file}" ] && [ ! -f "${file}" ] && { log.err "File '${file}' exists and is not a regular file" ; return 3 ; }
 	if [ ! -e "${file}" ] ; then
-		printf "#! /bin/sh -\n\n\n" > "${file}" || { log.err "Can't write to file '${file}'" ; return 3 ; }
+		printf "#! /bin/sh -\n\n\n" > "${file}" || { log.err "Can't write to file '${file}'" ; return 4 ; }
 		set -- "${@}" +3
 	fi
 	if [ ! -x "${file}" ] ; then
-		chmod +x "${file}" || { log.err "Can't chmod +x '${file}'" ; return 4 ; }
+		chmod +x "${file}" || { log.err "Can't chmod +x '${file}'" ; return 5 ; }
 	fi
 	vi "${@}" "${file}"
 }
@@ -195,14 +230,15 @@ cd () {
 	pwd="${PWD}"
 	1>/dev/null command cd - || return 1
 	1>/dev/null pushd "${pwd}" || return 1
+	l
 }
 
-############################## vimw (posix) ###############################
+################################# viw (posix) ##################################
 # Roughly equivalent to vi "$(which "$1")", but also allowing for args after $1
-vimw () {
-	_have vi || { log.err 'vi missing' ; exit 1 ; }
+viw () {
+	__have vi || { log.err 'vi missing' ; return 1 ; }
 
-	[ -z "${1-}" ] && { log.info "Usage: vimw FILE [VIM_ARGS...]" ; return 1 ; }
+	[ -z "${1-}" ] && { log.info "Usage: viw FILE [[N]VI[M]_ARGS...]" ; return 2 ; }
 
 	first="${1-}"
 	shift
@@ -214,12 +250,12 @@ vimw () {
 # Clears cache and removes orphans. Arguably dangerous.
 # Depends on iw, paru, pacman, rankmirrors, sudo, curl
 paruuu () {
-	_have iw || { log.err 'iw missing' ; exit 1 ; }
-	_have paru || { log.err 'paru missing' ; exit 2 ; }
-	_have pacman || { log.err 'pacman missing' ; exit 3 ; }
-	_have rankmirrors || { log.err 'rankmirrors missing' ; exit 4 ; }
-	_have sudo || { log.err 'sudo missing' ; exit 5 ; }
-	_have curl || { log.err 'curl missing' ; exit 6 ; }
+	__have iw || { log.err 'iw missing' ; exit 1 ; }
+	__have paru || { log.err 'paru missing' ; exit 2 ; }
+	__have pacman || { log.err 'pacman missing' ; exit 3 ; }
+	__have rankmirrors || { log.err 'rankmirrors missing' ; exit 4 ; }
+	__have sudo || { log.err 'sudo missing' ; exit 5 ; }
+	__have curl || { log.err 'curl missing' ; exit 6 ; }
 
 	printf 'Do system upgrade (Y) or exit (n): '
 	read -r choice
@@ -283,8 +319,8 @@ paruuu () {
 ################################ skill (posix) #################################
 # Depends on pgrep, ps
 skill () {
-	_have pgrep || { log.err 'pgrep missing' ; return 1 ; }
-	_have ps || { log.err 'ps missing' ; return 2 ; }
+	__have pgrep || { log.err 'pgrep missing' ; return 1 ; }
+	__have ps || { log.err 'ps missing' ; return 2 ; }
 
 	exit_status=0
 	while [ -n "${1-}" ] ; do
@@ -312,7 +348,7 @@ skill () {
 ############################# wpa_restart (posix) ##############################
 # Depends on wpa_supplicant
 wpa_restart () {
-	_have wpa_supplicant || { log.err 'wpa_supplicant missing' ; return 1 ; }
+	__have wpa_supplicant || { log.err 'wpa_supplicant missing' ; return 1 ; }
 
 	skill wpa_supplicant
 	sudo wpa_supplicant -B -i "${1:-wlan0}" -c /etc/wpa_supplicant/wpa_supplicant.conf
@@ -338,7 +374,7 @@ norminette () {
 	local vers
 	local newst
 
-	_have norminette || { log.err 'norminette missing' ; return 1 ; }
+	__have norminette || { log.err 'norminette missing' ; return 1 ; }
 
 	vers="$($(type -P norminette) -v | cut -d" " -f2)"
 	newst='3.3.55'
@@ -352,8 +388,8 @@ norminette () {
 ################################ __norm (posix) ################################
 # Depends on git, norminette
 __norm () {
-	_have git || { log.err 'git missing' ; return 1 ; }
-	_have norminette || { log.err 'norminette missing' ; return 2 ; }
+	__have git || { log.err 'git missing' ; return 1 ; }
+	__have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	__pwd="$(pwd -P)"
 	[ -n "${__pwd}" ] && [ -z "${__pwd##${HOME-}/42/42cursus/*}" ] || { return 1 ; }
@@ -369,8 +405,8 @@ ft_check () {
 	URL="${1-}"
 	DIR="/tmp/tmp_repo_$(date +%s)"
 
-	_have git || { log.err 'git missing' ; return 1 ; }
-	_have norminette || { log.err 'norminette missing' ; return 2 ; }
+	__have git || { log.err 'git missing' ; return 1 ; }
+	__have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	# If no URL, get it from current repo
 	if [ -z "${URL-}" ] ; then
@@ -398,8 +434,8 @@ clone42 () {
 	folder="${1-}"
 	repo_url="${2-}"
 
-	_have git || { log.err 'git missing' ; return 1 ; }
-	_have norminette || { log.err 'norminette missing' ; return 2 ; }
+	__have git || { log.err 'git missing' ; return 1 ; }
+	__have norminette || { log.err 'norminette missing' ; return 2 ; }
 
 	git clone --quiet "${repo_url}" "${folder}" && {
 		cd "${folder}"
@@ -475,7 +511,7 @@ else
 fi
 
 # Autoclear
-# If bash runs in posix mode, if should be `cut -c2-' instead
+# If bash runs in posix mode, if should be "cut -c2-" instead
 # PS0='$(clear -x ; printf "${PS1@P}" ; fc -nl -1 | cut -c3- ; printf "\n")'
 
 # Simplified *Bash* Prompt, e.g. for tty/system/linux console
@@ -498,30 +534,30 @@ aocload () {
 	local year
 	local day
 
-	_have curl || { log.err 'curl missing' ; exit 1 ; }
-	_have tmux || { log.err 'tmux missing' ; exit 2 ; }
-	_have git || { log.err 'git missing' ; exit 3 ; }
+	__have curl || { log.err 'curl missing' ; return 1 ; }
+	__have tmux || { log.err 'tmux missing' ; return 2 ; }
+	__have git || { log.err 'git missing' ; return 3 ; }
 
 	this_year="$(date "+%Y")"
 	this_day="$(date "+%d" | sed -e 's/^0//')"
 	if [ -n "${1-}" ] ; then
 		if [ -z "${2-}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected one more parameter (day)'
-			return 1
+			return 4
 		fi
 		if [ -n "${3-}" ] ; then
 			printf '\033[31m%s\033[m\n' 'Expected exactly 2 parameters (year day)'
-			return 2
+			return 5
 		fi
 		year="${1-}"
 		day="${2-}"
 		if [ "${day}" -lt "1" -o "${day}" -gt "25" ] ; then
 			printf '\033[31m%s\033[m\n' 'Day not in range 1..25'
-			return 3
+			return 6
 		fi
 		if [ "${year}" -lt "2015" -o "${year}" -gt "${this_year}" ] ; then
 			printf '\033[31m%s\033[m\n' "Year not in range 2015..${this_year}"
-			return 4
+			return 7
 		fi
 	else
 		year="${this_year}"
@@ -529,8 +565,8 @@ aocload () {
 	fi
 	dir="${AOC_DIR}/${year}/${day}"
 
-	mkdir -p -- "${dir}" || return 5
-	cd -P -- "${dir}" || return 6
+	mkdir -p -- "${dir}" || return 8
+	cd -P -- "${dir}" || return 9
 	2>/dev/null 1>&2 git init "${AOC_DIR}" || true
 
 	. "${AOC_DIR}/.env"
@@ -591,27 +627,27 @@ aocload () {
 
 	chmod +x './solution.py'
 	tmux splitw -v -c "${dir}"
-	tmux send-keys "nvim '+normal gg0' './in.txt'" ENTER
+	tmux send-keys "vi '+normal gg0' './in.txt'" ENTER
 	tmux select-pane -l
-	tmux send-keys "nvim './solution.py'" ENTER
+	tmux send-keys "vi './solution.py'" ENTER
 }
 
 ############################## terminal settings ###############################
 tabs -4
 set -o emacs
-_have lesspipe && eval "$(SHELL=/bin/sh lesspipe)"
+__have lesspipe && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Key Repeat/Delay Rate
-_have xset && 2>/dev/null xset r rate 200 60
-# _have kbdrate && sudo kbdrate --rate=30.0 --delay=250
+__have xset && 2>/dev/null xset r rate 200 60
+# __have kbdrate && sudo kbdrate --rate=30.0 --delay=250
 
 # Disable bell
-_have xset && 2>/dev/null xset -b
+__have xset && 2>/dev/null xset -b
 
 ################################# completions ##################################
-complete -F _command vimw
+complete -F _command viw
 complete -C backup_dir backup_dir
 complete -C backup_file backup_file
 
 ################################### sources ####################################
-_source_if "${HOME}/.userbashrc"
+__source_if "${HOME}/.userbashrc"

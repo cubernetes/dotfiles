@@ -3,6 +3,85 @@
 
 # TODO: Make more general purpose, currently quite bashy
 
+################################ utils (posix) #################################
+_squote_escape () {
+	if [ "${#}" -gt "0" ] ; then
+		for arg ; do
+			printf "'"
+			printf '%s' "${arg}" | sed "s/'/'"'"'"'"'"'"'/g"
+			printf "'\n"
+		done
+	else
+		sed "s/'/'"'"'"'"'"'"'/g; s/^/'/; s/$/'/"
+	fi
+}
+
+############################# define_func (posix) ##############################
+define_func () {
+	[ "${#}" -ne "2" ] && { log.err "Usage: define-func _func_name FUNC_BODY_AS_STR" ; return 1 ; }
+
+	_func_name="${1}"
+	_func_body="${2}"
+	eval "${_func_name}=$(_squote_escape "${_func_body}")" || return 2
+	eval "${_func_name} () {  ${_func_body}
+}" || return 3
+	_export_bash_func "${_func_name}"
+}
+
+########################## _export_bash_func (posix) ###########################
+_export_bash_func () {
+	_func_name="${1-}"
+
+	[ "${#}" -ne "1" ] && { log.err "Usage: _export_bash_func _func_name" ; return 1 ; }
+
+	case "${_func_name}" in (*[!abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*|""|[0123456789]*) false;; esac ||
+		{ log.err "_export_bash_func: not a valid name: ${_func_name}"; return 2; }
+
+	[ -n "$(eval "printf %s "'"'"\${${_func_name}-}"'"')" ] || { log.err "_export_bash_func: not a function: ${_func_name}" ; return 3 ; }
+
+	_newline="$(printf '\n.')" && _newline="${_newline%.}"
+	BASH_FUNCTIONS="${BASH_FUNCTIONS:+${BASH_FUNCTIONS}${_newline}}${_func_name}"
+	# exec env "BASH_FUNC_${_func_name}%%=() {  ${_func_body}${_newline}}" "${0}"
+}
+
+##################### _prepare_bash_funcs_for_eval (posix) #####################
+_prepare_bash_funcs_for_eval () {
+	_env_args=
+	_newline="$(printf '\n.')" && _newline="${_newline%.}"
+	while IFS= read -r _func_name ; do
+		_func_body="$(eval "printf %s "'"'"\${${_func_name}-}"'"')"
+		_env_arg_raw="BASH_FUNC_${_func_name}%%=() {  ${_func_body}${_newline}}"
+		_env_arg_safe="BASH_FUNC_${_func_name}_PERCENT_PERCENT=() {  ${_func_body}${_newline}}BASH_FUNC_END"
+		_env_args="${_env_args} $(_squote_escape "${_env_arg_raw}") $(_squote_escape "${_env_arg_safe}")"
+	done <<- FUNCS
+		${BASH_FUNCTIONS}
+	FUNCS
+	printf %s "${_env_args}"
+}
+
+############################# _to_eval_str (posix) #############################
+_to_eval_str () {
+	_eval_args=
+	for _arg; do
+		_eval_args="${_eval_args} $(_squote_escape "${_arg}")"
+	done
+	printf %s "${_eval_args}"
+}
+
+_exec () {
+	eval exec env "$(_prepare_bash_funcs_for_eval)" "$(_to_eval_str "${@}")"
+}
+
+_run () {
+	eval env "$(_prepare_bash_funcs_for_eval)" "$(_to_eval_str "${@}")"
+}
+
+############################### define functions ###############################
+define_func __path_lookup 'type -P "${1-}"' && export -f __path_lookup # adapted for bash.
+define_func __have_all 'while [ "${#}" -gt "0" ] ; do [ -x "$(__path_lookup "${1-}")" ] || return 1 ; shift ; done' && export -f __have_all
+define_func __have '__have_all "${1-}"' && export -f __have 
+define_func __source_if '[ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}"' && export -f __source_if 
+
 # TODO: Create ~/.local/bin directory and add ~/.local/bin to PATH
 # Add some basic scripts, like log.log, etc.
 ############################ logging utils (posix) #############################
@@ -69,7 +148,7 @@ else
 	export EMAIL42="timo42@proton.me"
 	export MAIL="timo42@proton.me"
 	export GOPATH="${HOME}/go"
-	MANPAGER="nvim +Man!" # MANPAGER="less -X"
+	__have nvim && MANPAGER="vi +Man!" && MANPAGER="less -F -X"
 	export MANPAGER
 	export PATH
 	export LD_LIBRARY_PATH
@@ -246,11 +325,11 @@ else
 	[ -s "${NVM_DIR}/bash_completion" ] && . "${NVM_DIR}/bash_completion"
 
 	if ! set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' ; then
-		! pidof -q startx && 1>/home/tosuman/.startx.log 2>&1 startx || log.warn "Not starting X again"
+		! pidof -q startx && 1>/home/tosuman/.startx.log 2>&1 _exec startx || log.warn "Not starting X again"
 	fi
 	log.info ".profile sourced"
 	export PROFILE_SOURCED='1'
 fi
 
 # if running bash
-[ -n "${BASH_VERSINFO}" ] && [ -f "${HOME}/.bashrc" ] && [ -r "${HOME}/.bashrc" ] && . "${HOME}/.bashrc"
+[ -n "${BASH_VERSINFO}" ] && [ -f "${HOME}/.bashrc" ] && [ -r "${HOME}/.bashrc" ] && _exec bash

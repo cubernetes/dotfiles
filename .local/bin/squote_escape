@@ -1,9 +1,10 @@
 #! /bin/sh -
 
-if [ -t 0 ] && [ -n "${1}" ]; then
-	while [ -n "${1}" ]; do
-		printf '%s\n' "${1}" | sed "s/'/'"'"'"'"'"'"'/g; s/^/'/; s/$/'/"
-		shift
+if [ "${#}" -gt "0" ] ; then
+	for arg ; do
+		printf "'"
+		printf '%s' "${arg}" | sed "s/'/'"'"'"'"'"'"'/g"
+		printf "'\n"
 	done
 else
 	sed "s/'/'"'"'"'"'"'"'/g; s/^/'/; s/$/'/"

@@ -1,5 +1,5 @@
 #! /bin/sh -
-# Depends on GNU cp, log.err
+# Depends on GNU tar, log.err
 
 ############################### completion start ###############################
 options='--no-chattr --no-sudo'
