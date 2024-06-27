@@ -205,6 +205,21 @@ CDPATH="."\
 ":${HOME}/projects/aoc/2023"
 
 ################################## FUNCTIONS ###################################
+################################ man (wrapper) #################################
+# Depends on mktemp, nvim, man
+man () (
+	__have mktemp || { log.err 'mktemp missing' ; exit 1 ; }
+	__have nvim || { log.err 'nvim missing' ; exit 2 ; }
+	__have man || { log.err 'man missing' ; exit 3 ; }
+
+	set -euo pipefail
+	trap '/bin/rm -f -- "${raw_manpage}"' EXIT
+	raw_manpage="$(mktemp)"
+	2>/dev/null MANPAGER=cat command man "$@" > "${raw_manpage}"
+	command nvim +Man! -- "${raw_manpage}"
+	command rm -f -- "${raw_manpage}"
+)
+
 ################################# vix (posix) ##################################
 vix () {
 	__have vi || { log.err 'vi missing' ; return 1 ; }
@@ -245,11 +260,11 @@ viw () {
 	vi "${@}" "$(type -P "${first}")"
 }
 
-#################################### paruuu (posix) ####################################
+################################# yolo (posix) #################################
 # Update arch linux system with pacman, paru and ssid whitelist
-# Clears cache and removes orphans. Arguably dangerous.
+# Clears cache and removes orphans. Arguably dangerous, but YOLO
 # Depends on iw, paru, pacman, rankmirrors, sudo, curl
-paruuu () {
+yolo () {
 	__have iw || { log.err 'iw missing' ; exit 1 ; }
 	__have paru || { log.err 'paru missing' ; exit 2 ; }
 	__have pacman || { log.err 'pacman missing' ; exit 3 ; }
