@@ -1,2 +1,2 @@
 #! /bin/sh -
-exec xrandr --output HDMI-1 --auto --output eDP-1 --off
+exec xrandr --output HDMI-1 --auto --output eDP-1 --off --output DP-1 --off
