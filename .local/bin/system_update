@@ -20,7 +20,7 @@ run () {
 		tmux rename-window 'System Update'
 	fi
 
-	tmux send-key 'paruuu' ENTER
+	tmux send-key 'yolo' ENTER
 }
 
 run

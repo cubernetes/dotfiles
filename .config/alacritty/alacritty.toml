@@ -35,6 +35,10 @@ yellow = "#da8548"
 # foreground = "#000000"
 # background = "#ffffff"
 
+# Blur
+# foreground = "#000000"
+# background = "#cccccc"
+
 # inside
 background = "#282c34"
 foreground = "#bbc2cf"

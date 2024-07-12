@@ -325,11 +325,12 @@ else
 	[ -s "${NVM_DIR}/bash_completion" ] && . "${NVM_DIR}/bash_completion"
 
 	if ! set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' ; then
-		! pidof -q startx && 1>/home/tosuman/.startx.log 2>&1 _exec startx || log.warn "Not starting X again"
+		! pidof -q startx && 1>"${HOME}/.startx.log" 2>&1 _exec startx || log.warn "Not starting X again"
 	fi
 	log.info ".profile sourced"
 	export PROFILE_SOURCED='1'
 fi
 
 # if running bash
-[ -n "${BASH_VERSINFO}" ] && [ -f "${HOME}/.bashrc" ] && [ -r "${HOME}/.bashrc" ] && _exec bash
+# [ -n "${BASH_VERSINFO}" ] && [ -f "${HOME}/.bashrc" ] && [ -r "${HOME}/.bashrc" ] && _exec bash
+[ -n "${BASH_VERSINFO}" ] && [ -f "${HOME}/.bashrc" ] && [ -r "${HOME}/.bashrc" ] && . "${HOME}/.bashrc"

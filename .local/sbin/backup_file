@@ -31,7 +31,7 @@ while : ; do
 done
 
 if [ "${#}" -eq "1" ] && [ -n "${1}" ]; then
-	backupdir="${HOME}/backups"
+	backupdir="${HOME}/.backups"
 	srcfile="${1}"
 elif [ "${#}" -eq "2" ] && [ -n "${1}" ] && [ -n "${2}" ] ; then
 	backupdir="${1}"

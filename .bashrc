@@ -666,3 +666,5 @@ complete -C backup_file backup_file
 
 ################################### sources ####################################
 __source_if "${HOME}/.userbashrc"
+
+alias mstest="bash /home/tosuman/42_minishell_tester/tester.sh"
