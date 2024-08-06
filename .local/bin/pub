@@ -13,7 +13,7 @@ curl () {
 	output=$(timeout 5 curl -sfSL "$@") # strip trailing newline
 	err=$? # save exit status
 	printf '%s\n' "${output}" # add trailing newline
-	[ $err = 0 ] && exit 0 # exit early, we got what we wanted
+	[ $err = 0 ] && printf '%s' "${output}" | grep -qF -- http && exit 0 # exit early, we got what we wanted
 	while [ -n "$1" ] && [ "${1}" = "$(printf %s "$1" | tr -d .)" ] ; do shift; done # find domain
 	[ -z "$1" ] && domain="<unknown>" || domain="$1" # didn't find domain?
 	[ $err = 124 ] && err "Timed out" # from timeout 5

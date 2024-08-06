@@ -141,9 +141,9 @@ elif __have vi ; then
 elif __have nano ; then
 	alias vi="$(__path_lookup nano)"
 fi
-alias v='log.err use vi'
-alias vim='log.err use vi'
-alias nvim='log.err use vi'
+alias v='log.err use vi; sleep 5 #'
+alias vim='log.err use vi; sleep 5 #'
+alias nvim='log.err use vi; sleep 5 #'
 
 ######################## default-option aliases (posix) ########################
 alias gdb='gdb -q'
@@ -165,7 +165,7 @@ alias watch='watch -tcn.1 ' # trailing space means complete aliases
 alias rm='rm -Iv'
 
 ########################## overwrite aliases (posix) ###########################
-alias make='compiledb make'
+alias make='compiledb make -j'
 alias cat='bat'
 
 ########################## navigation aliases (posix) ##########################
@@ -193,6 +193,15 @@ alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --f
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
 alias colors='bash -c "$(curl -sfkSL "https://gist.githubusercontent.com/HaleTom/89ffe32783f89f403bba96bd7bcd1263/raw")"'
 alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-) ; eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
+alias mstest="bash /home/tosuman/42_minishell_tester/tester.sh"
+alias rootshell='sudo python3 -c '\''import pty, os, fcntl, termios, struct;
+rows, cols = struct.unpack("hh", fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack("hh", 0, 0)));
+def set_winsize(fd, rows, cols):
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
+def read(fd):
+    set_winsize(fd, rows, cols)
+    return os.read(fd, 1024)
+pty.spawn("/bin/bash", read)'\'''
 
 ############################### CDPATHS (posix) ################################
 CDPATH="."\
@@ -666,5 +675,3 @@ complete -C backup_file backup_file
 
 ################################### sources ####################################
 __source_if "${HOME}/.userbashrc"
-
-alias mstest="bash /home/tosuman/42_minishell_tester/tester.sh"
