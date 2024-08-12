@@ -202,6 +202,8 @@ def read(fd):
     set_winsize(fd, rows, cols)
     return os.read(fd, 1024)
 pty.spawn("/bin/bash", read)'\'''
+alias night='1>/dev/null redshift -g 1:0.99:0.99 -O 5500'
+alias day='1>/dev/null redshift -x'
 
 ############################### CDPATHS (posix) ################################
 CDPATH="."\
