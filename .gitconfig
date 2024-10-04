@@ -1,7 +1,7 @@
 [user]
 	name = tosu
 	email = timo42@proton.me
-	signingkey = C00746F2E0F36492!
+	signingkey = /home/tosuman/.ssh/external/external_github_git.pub
 [init]
 	defaultBranch = main
 [color]
@@ -24,6 +24,9 @@
 	d = diff
 	tree = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr)%C(bold blue)<%an>%Creset' --abbrev-commit
 [gpg]
-	program = gpg
+	program = ssh
+	format = ssh
 [commit]
-#	gpgsign = true
+	gpgsign = true
+[gpg "ssh"]
+	allowedSignersFile = /home/tosuman/.ssh/allowed_signers

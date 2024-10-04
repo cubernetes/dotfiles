@@ -9,7 +9,7 @@ if [ -t 0 ] && [ -n "${1}" ]; then
 			invert_flag="-v"; shift;
 			[ -n "${1}" ] || { echo "${0}: syntax error: expected pattern after minus"; exit 2; }
 		} || invert_flag=""
-		query="${query} | grep ${invert_flag} -F -- $(squote_escape "${1}")"
+		query="${query} | grep ${invert_flag} -aF -- $(squote_escape "${1}")"
 		shift
 	done
 
