@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+
+import re
+import sys
+
+other_identifier = 'other'
+
+occf_template = """\
+class {{class_name}} {
+public:
+	~{{class_name}}();
+	{{class_name}}();
+	{{class_name}}(const {{class_name}}&);
+	{{class_name}}& operator=(const {{class_name}}&);
+{{private_member_decls}}};
+
+{{class_name}}::{{class_name}}() {
+	std::cout << "{{class_name}}: default ctor\\n";
+}
+
+{{class_name}}::{{class_name}}(const {{class_name}}& {{instance_other}}) {
+	std::cout << "{{class_name}}: copy ctor\\n";
+	*this = {{instance_other}};
+}
+
+{{class_name}}& {{class_name}}::operator=(const {{class_name}}& {{instance_other}}) {
+	std::cout << "{{class_name}}: copy-assignment operator\\n";
+{{private_member_copy_assigns}}return *this;
+}
+"""
+
+def gen_private_member_decls(decls: list[tuple[str, str, str]]) -> str:
+    result = 'private:\n'
+    for decl in decls:
+        decl_type, identifier, default_value = decl
+        if default_value:
+            result += f'\t{decl_type} {identifier} = {default_value};\n'
+        else:
+            result += f'\t{decl_type} {identifier};\n'
+    if result == 'private:\n':
+        return ''
+    return result
+
+def gen_private_member_copy_assigns(decls: list[tuple[str, str, str]]) -> str:
+    result = '\tif \x28this = &{{instance_other}}) \x7b\n'
+    for decl in decls:
+        _, identifier, _ = decl
+        result += f'\t\t{identifier} = {other_identifier}.{identifier};\n'
+    if result == '\tif \x28this = &{{instance_other}}) \x7b\n':
+        return '\t'
+    result += '\t}\n\t'
+    return result
+
+def gen_occf(class_name: str, decls: list[tuple[str, str, str]]) -> str:
+    result = occf_template.replace("{{class_name}}", class_name)
+    result = result.replace("{{instance_other}}", f"{other_identifier}")
+    result = result.replace("{{private_member_decls}}", gen_private_member_decls(decls))
+    result = result.replace("{{private_member_copy_assigns}}", gen_private_member_copy_assigns(decls))
+    return result
+
+def parse_class_name(s: str) -> str:
+    if (m := re.match(r'[a-zA-Z_][a-zA-Z_0-9]*', s.strip())):
+        return m[0]
+    return ''
+
+def parse_decl(s: str) -> tuple[str, str, str]:
+    # examples: std::string Bla_123 "hello"
+    #           int i
+    #           ::mystr __h1iegh
+    m = re.match(r'((?:(?:[a-zA-Z_][a-zA-Z_0-9]*)?::)?[a-zA-Z_][a-zA-Z_0-9]*)(?:\s+)([a-zA-Z_][a-zA-Z_0-9]*)(?:(?:\s+)((?:[0-9]+)|(?:"[^"]*")))?', s)
+    if not m:
+        return '', '', ''
+    return m[1], '_' + m[2], m[3]
+
+def parse_decls(decls: list[str]) -> list[tuple[str, str, str]]:
+    parsed_decls = []
+    for decl in decls:
+        parsed_decl = parse_decl(decl)
+        if not parsed_decl[0]:
+            return []
+        parsed_decls.append(parsed_decl)
+    if not parsed_decls:
+        return [('','','')]
+    return parsed_decls
+
+if __name__ == '__main__':
+    if len(sys.argv) <= 1:
+        print(f"Usage: {sys.argv[0]} <class_name> [<declarations>...]")
+        sys.exit(1)
+    if not (class_name := parse_class_name(sys.argv[1])):
+        print("Class name invalid")
+        sys.exit(1)
+    if not (decls := parse_decls(sys.argv[2:])):
+        print("One of the private member declarations is invalid")
+        sys.exit(1)
+    if not decls[0][0]:
+        decls.pop()
+    print(gen_occf(class_name, decls))
