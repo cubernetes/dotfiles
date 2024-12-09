@@ -68,12 +68,21 @@ getEth () {
 	printf '%s' "${eth}"
 }
 
+getGoku() {
+	# return 1
+	goku="$(ip address | grep -q goku: && echo "Goku active")"
+	fontColor="$(getColor '7ef000')"
+	# [ -n "${goku}" ] && goku="${dlm}^c#${fontColor}^嬨 ${goku}^d^"
+	[ -n "${goku}" ] && goku="${dlm}^c#${fontColor}^🛡️ ${goku}^d^"
+	printf '%s' "${goku}"
+}
+
 getNord() {
 	# return 1
-	nord="$(nordvpn status | grep Status | sed 's/.*Status: //')"
-	fontColor="$(getColor '8fbcbb')"
+	nord="$(nordvpn status | grep -q "Status: Connected" && echo "NordVPN active")"
+	fontColor="$(getColor '0e80f0')"
 	# [ -n "${nord}" ] && nord="${dlm}^c#${fontColor}^嬨 ${nord}^d^"
-	[ -n "${nord}" ] && nord="${dlm}^c#${fontColor}^🌐 ${nord}^d^"
+	[ -n "${nord}" ] && nord="${dlm}^c#${fontColor}^🛡️ ${nord}^d^"
 	printf '%s' "${nord}"
 }
 
@@ -107,6 +116,7 @@ getCpuTemp() {
 }
 
 getWattage() {
+	return 1
 	wattage="$(awk '{printf "%.0f", $1*10^-6}' /sys/class/power_supply/BAT1/power_now)"
 	fontColor="$(getColor '5e81ac')"
 	[ -n "${wattage}" ] && wattage="${dlm}^c#${fontColor}^⚡ ${wattage}W^d^"
@@ -130,7 +140,7 @@ getNumberOfTmuxSessions() {
 
 while : ; do
 	if [ -n "${DISPLAY}" ] ; then
-		root="$(getNumberOfTmuxSessions)$(getDate)$(getBattery)$(getWattage)$(getCpuTemp)$(getVolume)$(getBrightness)$(getLayout)$(getWifi)$(getEth)$(getRates)$(getNord)$(getBluetooth)"
+		root="$(getNumberOfTmuxSessions)$(getDate)$(getBattery)$(getWattage)$(getCpuTemp)$(getVolume)$(getBrightness)$(getLayout)$(getWifi)$(getEth)$(getRates)$(getNord)$(getGoku)$(getBluetooth)"
 		root="$(printf '%s' "${root}" | cut -c3-)"
 		xsetroot -name "${root}"
 	fi

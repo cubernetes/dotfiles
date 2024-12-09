@@ -23,7 +23,7 @@ require('lspconfig').clangd.setup{
 
 lsp.ensure_installed({
 	'clangd',
-	'tsserver',
+	'ts_ls',
 	'eslint',
 	'lua_ls',
 	'rust_analyzer',

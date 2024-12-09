@@ -29,51 +29,44 @@ hash -r
 unalias -a
 unset -v POSIXLY_CORRECT
 
-#################################### utils #####################################
-# import_bash_functions () {
-# 	__func_str=
-# 	__func_name=
-# 	while IFS= read -r line ; do
-# 		case "${line}" in
-# 			BASH_FUNC_*"_PERCENT_PERCENT=() {  "*)
-# 				__func_str="$(printf %s "${line#BASH_FUNC_}" | sed -e 's/_PERCENT_PERCENT=/ /')"
-# 				__func_name="${line#BASH_FUNC_}"
-# 				__func_name="${__func_name%%_PERCENT_PERCENT=*}"
-# 				;;
-# 			"}BASH_FUNC_END")
-# 				eval "${__func_str}
-# }"
-# 				export -f -- "${__func_name}"
-# 				__func_str=
-# 				__func_name=
-# 				;;	
-# 			*)
-# 				if [ -n "${__func_str}" ] && [ -n "${__func_name}" ] ; then
-# 					__func_str="${__func_str}
-# ${line}"
-# 				fi
-# 			;;
-# 		esac
-# 	done << __ENV
-# $(env)
-# __ENV
-# 	unset -v __func_str __func_name
-# }
-
-# import_bash_functions
-
-__path_lookup () { type -P "${1-}" ; } && export -f __path_lookup # adapted for bash.
-__have_all () { while [ "${#}" -gt "0" ] ; do [ -x "$(__path_lookup "${1-}")" ] || return 1 ; shift ; done ; } && export -f __have_all
-__have () { __have_all "${1-}" ; } && export -f __have 
-__source_if () { [ -f "${1-}" ] && [ -r "${1-}" ] && . "${1-}" ; } && export -f __source_if 
-
-
 ####################### per session environment (posix) ########################
+import_bash_functions () {
+	__func_str=
+	__func_name=
+	while IFS= read -r line ; do
+		case "${line}" in
+			BASH_FUNC_*"_PERCENT_PERCENT=() {  "*)
+				__func_str="$(printf %s "${line#BASH_FUNC_}" | sed -e 's/_PERCENT_PERCENT=/ /')"
+				__func_name="${line#BASH_FUNC_}"
+				__func_name="${__func_name%%_PERCENT_PERCENT=*}"
+				;;
+			"}BASH_FUNC_END")
+				eval "${__func_str}
+}"
+				export -f -- "${__func_name}"
+				__func_str=
+				__func_name=
+				;;	
+			*)
+				if [ -n "${__func_str}" ] && [ -n "${__func_name}" ] ; then
+					__func_str="${__func_str}
+${line}"
+				fi
+			;;
+		esac
+	done << __ENV
+$(env)
+__ENV
+	unset -v __func_str __func_name
+}
+
+import_bash_functions
+
 set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/null
 [ -n "${DISPLAY-}" ] || log.warn 'DISPLAY not set'
 set | grep -sq '^\(TMUX_PANE\|SSH_CONNECTION\)' && exec 2>/dev/tty
 
-BAT_THEME='gruvbox-dark' || BAT_THEME='gruvbox-light'
+BAT_THEME='gruvbox-dark' # BAT_THEME='gruvbox-light'
 GPG_TTY="$(tty)"
 
 if [ ! "${TERM-}" = "linux" ] ; then
@@ -88,13 +81,12 @@ if [ ! "${TERM-}" = "linux" ] ; then
 	__scope
 	unset -f __scope
 fi
-MANPAGER='less -X'
 
 # ensure exported
 export USER HOME PWD PATH LD_LIBRARY_PATH TERM LANG DISPLAY EDITOR VISUAL \
 	XDG_RUNTIME_DIR MAIL GOPATH SUDO_EDITOR SSH_AUTH_SOCK MANPAGER \
 	GIT_SSH_COMMAND GIT_CONFIG_GLOBAL GPG_TTY BAT_THEME _JAVA_AWT_WM_NONREPARENTING \
-	USER42 EMAIL42 CDPATH
+	USER42 EMAIL42
 
 ################################# bash options #################################
 shopt -s autocd
@@ -130,20 +122,23 @@ write_history () {
 } && trap 'write_history' EXIT
 
 ############################# vim aliases (posix) ##############################
-if __have nvim ; then
-	alias vi="$(__path_lookup nvim)"
-elif __have vim ; then
-	alias vi="$(__path_lookup vim)"
-elif __have nvi ; then
-	alias vi="$(__path_lookup nvi)"
-elif __have vi ; then
-	alias vi="$(__path_lookup vi)"
-elif __have nano ; then
-	alias vi="$(__path_lookup nano)"
-fi
-alias v='log.err use vi; sleep 5 #'
-alias vim='log.err use vi; sleep 5 #'
-alias nvim='log.err use vi; sleep 5 #'
+# if __have nvim ; then
+# 	alias vi="$(__path_lookup nvim)"
+# elif __have vim ; then
+# 	alias vi="$(__path_lookup vim)"
+# elif __have nvi ; then
+# 	alias vi="$(__path_lookup nvi)"
+# elif __have vi ; then
+# 	alias vi="$(__path_lookup vi)"
+# elif __have nano ; then
+# 	alias vi="$(__path_lookup nano)"
+# fi
+# alias v='log.err use vi'
+# alias vim='log.err use vi'
+# alias nvim='log.err use vi'
+alias v='nvim'
+alias vi='nvim'
+alias vim='nvim'
 
 ######################## default-option aliases (posix) ########################
 alias gdb='gdb -q'
@@ -162,10 +157,9 @@ alias objdump='objdump --disassembler-color=extended-color -Mintel'
 alias dmesg='dmesg --color=auto --reltime --human --nopager --decode'
 alias sudo='sudo ' # trailing space means complete aliases
 alias watch='watch -tcn.1 ' # trailing space means complete aliases
-alias rm='rm -Iv'
 
 ########################## overwrite aliases (posix) ###########################
-alias make='compiledb make -j'
+alias make='compiledb make -j$(nproc)'
 alias cat='bat'
 
 ########################## navigation aliases (posix) ##########################
@@ -179,32 +173,20 @@ alias svi='sudo vi'
 alias open='xdg-open'
 alias dp='declare -p'
 alias wttr='curl -sfkSL wttr.in'
-alias wttrb='curl -sfkSL wttr.in/berlin'
 alias ipa='ip -br -color=auto a'
 alias xcopy='xsel --clipboard --input'
 alias xpaste='xsel --clipboard --output'
 alias paco='"${HOME-}/francinette/tester.sh"'
-alias pcker='vi "${HOME-}/.config/nvim/lua/"*'
+alias pcker='nvim "${HOME-}/.config/nvim/lua/"*'
 alias francinette='"${HOME-}/francinette/tester.sh"'
 alias q-dig='docker run --rm -it ghcr.io/natesales/q'
 alias q='duck'
-alias after='vi "${HOME-}/.config/nvim/after/plugin"'
+alias after='nvim "${HOME-}/.config/nvim/after/plugin"'
 alias dotconf='git --git-dir="${HOME-}/.dotfiles/" --work-tree="${HOME-}"'
 alias ll='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --fu -bharZ1l'
 alias l='\ls --width="${COLUMNS:-80}" --sort=time --time=mtime --color=auto --time-style=long-iso -bharZ1l'
 alias colors='bash -c "$(curl -sfkSL "https://gist.githubusercontent.com/HaleTom/89ffe32783f89f403bba96bd7bcd1263/raw")"'
 alias s='echo sudo $(fc -nl -2 | head -1 | cut -c3-) ; eval sudo $(fc -nl -2 | head -1 | cut -c3-)' # cut -c2- for bash posix mode
-alias mstest="bash /home/tosuman/42_minishell_tester/tester.sh"
-alias rootshell='sudo python3 -c '\''import pty, os, fcntl, termios, struct;
-rows, cols = struct.unpack("hh", fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack("hh", 0, 0)));
-def set_winsize(fd, rows, cols):
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
-def read(fd):
-    set_winsize(fd, rows, cols)
-    return os.read(fd, 1024)
-pty.spawn("/bin/bash", read)'\'''
-alias night='1>/dev/null redshift -g 1:0.99:0.99 -O 5500'
-alias day='1>/dev/null redshift -x'
 
 ############################### CDPATHS (posix) ################################
 CDPATH="."\
@@ -217,26 +199,11 @@ CDPATH="."\
 ":${HOME}/projects/aoc/2023"
 
 ################################## FUNCTIONS ###################################
-################################ man (wrapper) #################################
-# Depends on mktemp, nvim, man
-man () (
-	__have mktemp || { log.err 'mktemp missing' ; exit 1 ; }
-	__have nvim || { log.err 'nvim missing' ; exit 2 ; }
-	__have man || { log.err 'man missing' ; exit 3 ; }
-
-	set -euo pipefail
-	trap '/bin/rm -f -- "${raw_manpage}"' EXIT
-	raw_manpage="$(mktemp)"
-	2>/dev/null MANPAGER=cat command man "$@" > "${raw_manpage}"
-	command nvim +Man! -- "${raw_manpage}"
-	command rm -f -- "${raw_manpage}"
-)
-
 ################################# vix (posix) ##################################
 vix () {
 	__have vi || { log.err 'vi missing' ; return 1 ; }
 
-	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [[N]VI[M]_ARGS...]" ; return 1 ; }
+	[ "${#}" -lt "1" ] && { log.info "Usage: vix FILE [VIM_ARGS...]" ; return 1 ; }
 
 	file="${1-}"
 	shift
@@ -257,26 +224,25 @@ cd () {
 	pwd="${PWD}"
 	1>/dev/null command cd - || return 1
 	1>/dev/null pushd "${pwd}" || return 1
-	l
 }
 
-################################# viw (posix) ##################################
+############################## vimw (posix) ###############################
 # Roughly equivalent to vi "$(which "$1")", but also allowing for args after $1
-viw () {
+vimw () {
 	__have vi || { log.err 'vi missing' ; return 1 ; }
 
-	[ -z "${1-}" ] && { log.info "Usage: viw FILE [[N]VI[M]_ARGS...]" ; return 2 ; }
+	[ -z "${1-}" ] && { log.info "Usage: vimw FILE [VIM_ARGS...]" ; return 2 ; }
 
 	first="${1-}"
 	shift
 	vi "${@}" "$(type -P "${first}")"
 }
 
-################################# yolo (posix) #################################
+#################################### paruuu (posix) ####################################
 # Update arch linux system with pacman, paru and ssid whitelist
-# Clears cache and removes orphans. Arguably dangerous, but YOLO
+# Clears cache and removes orphans. Arguably dangerous.
 # Depends on iw, paru, pacman, rankmirrors, sudo, curl
-yolo () {
+paruuu () {
 	__have iw || { log.err 'iw missing' ; exit 1 ; }
 	__have paru || { log.err 'paru missing' ; exit 2 ; }
 	__have pacman || { log.err 'pacman missing' ; exit 3 ; }
@@ -525,7 +491,7 @@ _PS1_1="${_PS1_1-}\h\[\033[m\]"
 _PS1_1="${_PS1_1-}${_PS1_SSH-}${_PS1_TMUX-} "
 _PS1_1="${_PS1_1-}${_PS1_CWD_CLR-}"
 _PS1_1="${_PS1_1-}[\w]\${TOOK_STRING-}"
-_PS1_GIT='\[\033[m\]\[\033[36m\]$(__git_ps1 " (%s)")'
+_PS1_GIT='\[\033[m\]\[\033[36m\]$(: __git_ps1 " (%s)")'
 # _PS1_2='\[\033[m\]\[\033[36m\]$(__norm)\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 _PS1_2='\[\033[m\]\[\033[36m\]\[\033[m\]\n\[\033[35m\]~\$\[\033[m\] '
 
@@ -551,7 +517,7 @@ fi
 # TODO: put into script
 export AOC_DIR="${HOME}/projects/aoc" # remember to change this to whatever your AOC directory is
 alias aos='< in.txt python3 solution.py'
-alias aot='< test.txt printf '\033[34m' ;  python3 solution.py ; printf '\033[m''
+alias aot='printf "\033[34m" ; < test.txt python3 solution.py ; printf "\033[m"'
 alias aoc='aot ; echo ; aos'
 
 ################################### aocload ####################################
@@ -606,59 +572,69 @@ aocload () {
 
 	if [ ! -f './solution.py' ] ; then
 		cat <<- TEMPLATE >> './solution.py'
-			#!/usr/bin/env python3
+			#!/usr/bin/env pypy3
 
-			print()
-
-			import os
-			import re
-			import sys
-			import math
-			import multiprocessing as mp
-			from copy import copy, deepcopy
-			from typing import Any
-			import numpy as np
-			import more_itertools as miter
-			from functools import cache, lru_cache, reduce
-			from collections import deque, defaultdict, Counter
-			from itertools import (
-			    repeat, cycle, combinations, combinations_with_replacement,
-			    permutations, tee, pairwise, zip_longest, islice, takewhile,
-			    filterfalse, starmap
-			)
-			e=enumerate
-
-			data = open(0).read().strip().splitlines()
-			R = len(data)
-			C = len(data[0])
-			def parse_grid(data: list[str]) -> Any:
-			    for r in range(R):
-			        for c in range(C):
-			            pass
-			def parse_lines(data: list[str]) -> Any:
-			    for line in data:
-			        line = line.split()
-			def parse_line(data: list[str]) -> Any:
-			    return data[0].split()
-			# data = parse_line(data)
-			# data = parse_lines(data)
-			data = parse_grid(data)
-
-			t = 0
-			for line in data:
-			    n = 0
-			    t += n
-			print(t)
+			open(0)
 		TEMPLATE
+		# cat <<- TEMPLATE >> './solution.py'
+		# 	#!/usr/bin/env pypy3
+
+		# 	print()
+
+		# 	import os
+		# 	import re
+		# 	import sys
+		# 	import math
+		# 	import multiprocessing as mp
+		# 	from copy import copy, deepcopy
+		# 	from typing import Any
+		# 	import numpy as np
+		# 	import more_itertools as miter
+		# 	from functools import cache, lru_cache, reduce
+		# 	from collections import deque, defaultdict, Counter
+		# 	from itertools import (
+		# 	    repeat, cycle, combinations, combinations_with_replacement,
+		# 	    permutations, tee, pairwise, zip_longest, islice, takewhile,
+		# 	    filterfalse, starmap
+		# 	)
+		# 	e=enumerate
+
+		# 	data = open(0).read().strip().splitlines()
+		# 	R = len(data)
+		# 	C = len(data[0])
+		# 	def parse_grid(data: list[str]) -> Any:
+		# 	    grid = []
+		# 	    for r in range(R):
+		# 	        for c in range(C):
+		# 	            pass
+		# 	    return grid
+
+		# 	def parse_lines(data: list[str]) -> Any:
+		# 	    new_data = []
+		# 	    for line in data:
+		# 	        new_data.append(line.split())
+		# 	    return new_data
+
+		# 	def parse_line(data: list[str]) -> Any:
+		# 	    return data[0].split()
+		# 	# data = parse_line(data)
+		# 	data = parse_lines(data)
+		# 	# data = parse_grid(data)
+
+		# 	t = 0
+		# 	for line in data:
+		# 	    n = 0
+		# 	    t += n
+		# 	print(t)
+		# TEMPLATE
 	fi
 
 	chmod +x './solution.py'
 	tmux splitw -v -c "${dir}"
-	tmux send-keys "vi '+normal gg0' './in.txt'" ENTER
+	tmux send-keys "nvim '+normal gg0' './in.txt'" ENTER
 	tmux select-pane -l
-	tmux send-keys "vi './solution.py'" ENTER
+	tmux send-keys "nvim './solution.py'" ENTER
 }
-
 ############################## terminal settings ###############################
 tabs -4
 set -o emacs
@@ -672,7 +648,7 @@ __have xset && 2>/dev/null xset r rate 200 60
 __have xset && 2>/dev/null xset -b
 
 ################################# completions ##################################
-complete -F _command viw
+complete -F _command vimw
 complete -C backup_dir backup_dir
 complete -C backup_file backup_file
 

@@ -2,22 +2,24 @@
 # ex: set ts=4 sw=4 ft=sh
 
 # Enable Touchpad While Typing
-# xinput |
-# 	grep Touchpad |
-# 	awk '{print $6}' |
-# 	sed "s/id=//" - |
-# 	{
-# 		read iid; xinput list-props $iid |
-# 		grep "Typing Enabled (" |
-# 		awk '{gsub(/\(|\)|:/,""); print $6}' |
-# 		xargs -I pid xinput set-prop "$iid" pid 0;
-# 	}
+xinput |
+	grep Touchpad |
+	awk '{print $6}' |
+	sed "s/id=//" - |
+	{
+		read iid; xinput list-props $iid |
+		grep "Typing Enabled (" |
+		awk '{gsub(/\(|\)|:/,""); print $6}' |
+		xargs -I pid xinput set-prop "$iid" pid 0;
+	}
 
 setxkbmap -layout us
 three-mon
 updatebar
 2>/dev/null 1>&2 nohup picom &
 2>/dev/null 1>&2 startlxde &
+
+export XDG_SESSION_TYPE=x11
 
 while : ; do
 	2>>/home/tosuman/.xinit.log 1>&2 dwm
